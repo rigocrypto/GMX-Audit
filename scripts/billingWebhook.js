@@ -282,7 +282,14 @@ function acquireLock() {
       lockPath: LOCK_PATH
     });
     return true;
-  } catch (_) {
+  } catch (err) {
+    const reason = (err && typeof err === "object" && "code" in err && err.code)
+      || (err && typeof err === "object" && "message" in err && err.message)
+      || String(err);
+    log("warn", "worker.lock_acquire_failed", {
+      lockPath: LOCK_PATH,
+      reason
+    });
     return false;
   }
 }
