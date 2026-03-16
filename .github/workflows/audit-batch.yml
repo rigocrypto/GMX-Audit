@@ -79,6 +79,18 @@ jobs:
           git log --oneline -3
           echo "=================="
 
+      - name: Enforce minimum checkout SHA
+        run: |
+          EXPECTED_MIN_SHA="5fd06caf69fdd1fb4107671579a18ed3b83c5657"
+          CURRENT_SHA="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$EXPECTED_MIN_SHA" "$CURRENT_SHA"; then
+            echo "ERROR: stale workflow ref detected."
+            echo "Expected checkout at or after: $EXPECTED_MIN_SHA"
+            echo "Current checkout: $CURRENT_SHA"
+            echo "Re-run from latest main or update the PR branch."
+            exit 1
+          fi
+
       - name: Install Dependencies
         run: npm ci
 
