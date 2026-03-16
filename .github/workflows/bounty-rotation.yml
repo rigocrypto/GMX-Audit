@@ -54,12 +54,12 @@ jobs:
       - name: Enforce minimum checkout SHA
         shell: bash
         run: |
-          EXPECTED_MIN_SHA="94e81384eb2651d2dd9da9e6673eaf1b9db519c6"
           CURRENT_SHA="$(git rev-parse HEAD)"
-          if ! git merge-base --is-ancestor "$EXPECTED_MIN_SHA" "$CURRENT_SHA"; then
-            echo "ERROR: stale workflow ref detected for bounty-rotation triage."
-            echo "Expected checkout at or after: $EXPECTED_MIN_SHA"
-            echo "Current checkout: $CURRENT_SHA"
+          MAIN_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$CURRENT_SHA" != "$MAIN_SHA" ]; then
+            echo "ERROR: stale workflow ref detected for bounty-rotation."
+            echo "Checked out: $CURRENT_SHA"
+            echo "Current origin/main: $MAIN_SHA"
             echo "Re-run from latest main."
             exit 1
           fi

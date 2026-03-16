@@ -34,12 +34,12 @@ jobs:
 
       - name: Enforce minimum checkout SHA
         run: |
-          EXPECTED_MIN_SHA="5fd06caf69fdd1fb4107671579a18ed3b83c5657"
           CURRENT_SHA="$(git rev-parse HEAD)"
-          if ! git merge-base --is-ancestor "$EXPECTED_MIN_SHA" "$CURRENT_SHA"; then
+          MAIN_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
+          if [ "$CURRENT_SHA" != "$MAIN_SHA" ]; then
             echo "ERROR: stale workflow ref detected."
-            echo "Expected checkout at or after: $EXPECTED_MIN_SHA"
-            echo "Current checkout: $CURRENT_SHA"
+            echo "Checked out: $CURRENT_SHA"
+            echo "Current origin/main: $MAIN_SHA"
             echo "Re-run from latest main."
             exit 1
           fi
