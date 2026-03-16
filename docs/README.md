@@ -8,8 +8,8 @@ Use only two docs for current execution state:
 ## Current Gate Status
 
 - Gate A (`executeWithdrawal: payout <= fair share`): `PASS` when `GMX_ALLOW_AVA_ORACLE_EXECUTE=1`; default run remains pending by design.
-- Gate B (`executeOrder` critical path): not run in this pass.
-- Gate C (one Oracle source diff): `NOT VALIDATED` in this pass; local source snapshot files were empty.
+- Gate B (`executeOrder` critical path): `PASS` when `GMX_ALLOW_AVA_ORACLE_EXECUTE=1`.
+- Gate C (one Oracle source diff): `PARTIAL`; Avalanche source fetched, Arbitrum fetch blocked by deprecated endpoint / missing V2 key.
 - Gate D (Slither reentrancy/delegatecall pass): completed and triaged; highest-signal findings are access-control constrained.
 
 ## Evidence Files
@@ -17,6 +17,8 @@ Use only two docs for current execution state:
 - `outputs/slither-gmx-synthetics.json`
 - `outputs/oracle-store-arb.sol`
 - `outputs/oracle-store-ava.sol`
+- `outputs/oracle-store-meta.json`
+- `outputs/oracle-store-diff.txt`
 - `outputs/findings.md`
 - `outputs/chain_diff.md`
 

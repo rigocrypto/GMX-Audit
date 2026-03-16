@@ -25,29 +25,50 @@ $env:GMX_ALLOW_AVA_ORACLE_EXECUTE='1' ; npm run test:gmx-exploit-search:ava -- -
 
 ## Gate B (Must): executeOrder market-increase path
 
-Run next:
+Command used:
 
 ```bash
-npm run test:gmx-exploit-search:ava -- --grep "executeOrder"
+$env:GMX_ALLOW_AVA_ORACLE_EXECUTE='1' ; npm run test:gmx-exploit-search:ava -- --grep "executeOrder|market-increase"
 ```
 
-Pass condition:
+Latest result:
 
-- Target executeOrder critical test runs (not pending) and passes.
+- Test discovered: `Order Fee Escape [WAVAX/USDC] -> executeOrder: market-increase position is opened (deterministic)`
+- Outcome: `1 passing`
+- Interpretation: Gate B is currently passing when Avalanche oracle execute skip guard is disabled.
 
 ## Gate C (Must): one Oracle source diff
 
-Command used:
+Command used (initial check):
 
 ```bash
 git diff --no-index -- outputs/oracle-store-arb.sol outputs/oracle-store-ava.sol
 ```
 
+Follow-up command (scripted fetch with proxy-aware parsing):
+
+```bash
+node scripts/fetch-verified-source.js
+```
+
 Latest result:
 
-- No textual diff output between saved Arb/Ava OracleStore snapshots.
-- Sanity check: both local files were empty (`Length = 0`), so this comparison is not valid evidence.
-- Interpretation: Gate C remains open; refetch source from explorer and compare implementation contracts (not proxies).
+- `outputs/oracle-store-meta.json` and `outputs/oracle-store-diff.txt` now generated.
+- Avalanche fetch succeeded (`OracleStore`, source length `52090`).
+- Arbitrum fetch failed due deprecated explorer endpoint / missing V2 key (`source length 0`).
+- Interpretation: Gate C remains partially open until Arbitrum source is fetched using supported V2 API credentials.
+
+## Environment Flags Required For Avalanche Tests
+
+| Flag | Value | Effect | Required For |
+|---|---|---|---|
+| `GMX_ALLOW_AVA_ORACLE_EXECUTE` | `1` | Disables avalanche-only skip guard in deterministic execute tests | Gate A, Gate B |
+
+What this flag bypasses:
+
+- In [test/gmx-invariants/withdrawalLifecycle.spec.ts](test/gmx-invariants/withdrawalLifecycle.spec.ts#L79) and [test/gmx-invariants/withdrawalLifecycle.spec.ts](test/gmx-invariants/withdrawalLifecycle.spec.ts#L116), tests call `this.skip()` when chain is avalanche and `GMX_ALLOW_AVA_ORACLE_EXECUTE !== "1"`.
+- In [test/gmx-invariants/orderFeeEscape.spec.ts](test/gmx-invariants/orderFeeEscape.spec.ts#L130), the deterministic executeOrder test uses the same guard.
+- This bypasses test-level skip logic only; it does not alter protocol role checks or contract accounting logic.
 
 ## Gate D (Nice, but high value): Slither reentrancy/delegatecall triage
 
@@ -93,6 +114,12 @@ Exploitability triage for high-signal `arbitrary-send-*`:
 - `contracts/market/PositionImpactPoolUtils.sol:153` (`reduceLentAmount`): library call site is `ConfigTimelockController.reduceLentImpactAmount`, gated by `onlySelf` execution.
 - `contracts/fee/FeeDistributor.sol:457` (`_bridgeGmx`) and `contracts/fee/FeeDistributor.sol:542` (`_finalizeWntForTreasury`): internal distribution flow; entrypoints are keeper/reader gated.
 
+Router plugin role governance note:
+
+- `onlyRouterPlugin` resolves via `RoleStore.hasRole(..., Role.ROUTER_PLUGIN)` in [gmx-synthetics/contracts/role/RoleModule.sol](gmx-synthetics/contracts/role/RoleModule.sol#L91).
+- Role grants are admin-only in [gmx-synthetics/contracts/role/RoleStore.sol](gmx-synthetics/contracts/role/RoleStore.sol#L44).
+- Timelock role grant signaling path exists in [gmx-synthetics/contracts/config/TimelockConfig.sol](gmx-synthetics/contracts/config/TimelockConfig.sol#L52).
+
 Oracle detector mix (important):
 
 - Oracle-scoped findings are only `reentrancy-benign`, `reentrancy-events`, and `reentrancy-no-eth`.
@@ -100,10 +127,10 @@ Oracle detector mix (important):
 
 ## Minimal Ship Checklist
 
-1. Clear Gate A or document concrete reason it cannot be executed on current fork.
-2. Run Gate B command and classify pass/pending/fail.
-3. For Gate C, confirm proxy/implementation mapping for the compared Oracle addresses.
-4. Triage top Slither findings for exploitability (especially GLV handlers and Oracle flow).
+1. Keep Gate A/B commands pinned with `GMX_ALLOW_AVA_ORACLE_EXECUTE=1` for deterministic avalanche execution.
+2. Complete Gate C by fetching Arbitrum OracleStore source through a supported V2 API key path.
+3. Confirm proxy/implementation mapping for compared Oracle addresses after Arbitrum fetch is restored.
+4. Continue triage on any remaining non-permissioned high-signal static findings.
 
 ## Notes
 
