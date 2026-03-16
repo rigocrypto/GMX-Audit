@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Slither: Full Static Analysis",
+      "type": "shell",
+      "command": "slither . --checklist --json slither-report.json --exclude suicidal,naming-convention",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "GMX Invariants: Full",
+      "type": "shell",
+      "command": "npm run test:gmx-invariants:full",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "GMX Exploit Search: Extended",
+      "type": "shell",
+      "command": "npm run test:gmx-exploit-search:extended",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Smoke: All + Report",
+      "type": "shell",
+      "command": "npm run smoke:all",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Billing Queue Tests",
+      "type": "shell",
+      "command": "npm run billing:test",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Coverage Report (LCOV)",
+      "type": "shell",
+      "command": "npx hardhat coverage",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Chain Diff: Arb vs Ava (Bytecode)",
+      "type": "shell",
+      "command": "npm run test:gmx-exploit-search:ava",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Compile + Size Report",
+      "type": "shell",
+      "command": "npx hardhat compile --force",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always"
+      }
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "solidity.compiler": "remote",
+  "solidity.defaultCompiler": "latest",
+  "solidity.remappings": [
+    "@openzeppelin/=lib/openzeppelin-contracts/",
+    "@chainlink/=lib/chainlink/",
+    "forge-std/=lib/forge-std/src/",
+    "ds-test/=lib/ds-test/src/",
+    "gmx-v1/=lib/gmx-contracts/",
+    "gmx-v2/=src/contracts/"
+  ],
+  "solidity.formatter": "forge",
+  "solidity.validate": true,
+  "solidity.packageDefaultDependenciesContractsDirectory": "src",
+  "solidity.packageDefaultDependenciesDirectory": "lib",
+  "[solidity]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.defaultFormatter": "JuanBlanco.solidity"
+  },
+  "slither.projectRoot": ".",
+  "slither.solc": "0.8.24",
+  "slither.filters": "--exclude=suicidal,naming-convention,too-many-digits,assembly",
+  "foundry.pathToFoundryBinaries": "~/.foundry/bin",
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.env.windows": {
+    "AVALANCHE_RPC_URL": "https://api.avax.network/ext/bc/C/rpc",
+    "ARBITRUM_RPC_URL": "https://arb1.arbitrum.io/rpc"
+  },
+  "gitlens.codeLens.enabled": true,
+  "gitlens.hovers.enabled": true
+}

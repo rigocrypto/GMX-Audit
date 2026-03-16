@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "JuanBlanco.solidity",
+    "tintinweb.solidity-vscode-extensions",
+    "tintinweb.vscode-eth-overload",
+    "hardhat.vscode-hardhat-solidity",
+    "foundryvtt.foundry-vscode",
+    "vectorized.solidity-scan",
+    "ms-vscode.vscode-json",
+    "ms-python.python",
+    "ms-vsliveshare.vsliveshare",
+    "github.vscode-pull-request-github",
+    "redhat.vscode-yaml",
+    "eamodio.gitlens"
+  ]
+}

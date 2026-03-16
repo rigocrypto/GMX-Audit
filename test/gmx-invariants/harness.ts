@@ -323,6 +323,22 @@ function readDeploymentAddress(fileName: string): string | undefined {
 }
 
 let directRpcProvider: JsonRpcProvider | undefined;
+let directRpcProviderCleanupHookInstalled = false;
+
+export async function shutdownDirectRpcProvider(): Promise<void> {
+  if (!directRpcProvider) {
+    return;
+  }
+
+  try {
+    directRpcProvider.removeAllListeners();
+    await directRpcProvider.destroy();
+  } catch {
+    // Best-effort teardown; test logic should not fail on provider cleanup.
+  } finally {
+    directRpcProvider = undefined;
+  }
+}
 
 export function isRealMutationsEnabled(): boolean {
   const value = (process.env.GMX_ENABLE_REAL_MUTATIONS || "").trim().toLowerCase();
@@ -361,6 +377,12 @@ export function getDirectRpcProvider(): JsonRpcProvider {
       throw new Error("Chain RPC env must be configured for direct fork-block reads");
     }
     directRpcProvider = new JsonRpcProvider(url);
+    if (!directRpcProviderCleanupHookInstalled) {
+      directRpcProviderCleanupHookInstalled = true;
+      process.once("exit", () => {
+        void shutdownDirectRpcProvider();
+      });
+    }
   }
   return directRpcProvider;
 }

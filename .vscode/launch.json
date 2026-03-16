@@ -1,0 +1,43 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug GMX Invariant Test",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "hardhat",
+        "test",
+        "--grep",
+        "${input:testFilter}",
+        "--network",
+        "hardhat",
+        "--show-stack-traces"
+      ],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "env": {
+        "GMX_ENABLE_REAL_MUTATIONS": "true"
+      }
+    },
+    {
+      "name": "Debug Billing Queue",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/testBillingQueue.js",
+      "env": {
+        "BILLING_TEST_TIMEOUT_MS": "10000"
+      },
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testFilter",
+      "type": "promptString",
+      "description": "Mocha test grep filter (example: vault accounting)",
+      "default": "GMX invariants"
+    }
+  ]
+}
