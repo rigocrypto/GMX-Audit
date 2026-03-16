@@ -1,0 +1,43 @@
+﻿{
+  "chainId": 42161,
+  "name": "arbitrum",
+  "explorer": {
+    "type": "etherscan",
+    "apiBase": "https://api.arbiscan.io/api"
+  },
+  "gmxV1": {
+    "vault": "0x489ee077994B6658eAfA855C308275EAd8097C4A"
+  },
+  "gmxV2": {
+    "dataStore": "0xFD70de6b91282D8017aA4E741e9Ae325CAb992d8",
+    "reader": "0x470fbC46bcC0f16532691Df360A07d8Bf5ee0789",
+    "vault": "0xCeaadFAf6A8C489B250e407987877c5fDfcDBE6E",
+    "vaults": [
+      "0xCeaadFAf6A8C489B250e407987877c5fDfcDBE6E",
+      "0xF89e77e8Dc11691C9e8757e84aaFbCD8A67d7A55",
+      "0x31eF83a530Fde1B38EE9A18093A333D8Bbbc40D5"
+    ]
+  },
+  "nativeWrappedToken": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+  "archiveRpcHint": "Use Infura/Alchemy/QuickNode Arbitrum archive endpoint for pinned-block completeness.",
+  "tokenMetadata": {
+    "0x82af49447d8a07e3bd95bd0d56f35241523fbab1": { "symbol": "WETH", "name": "Wrapped Ether",   "decimals": 18 },
+    "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f": { "symbol": "WBTC", "name": "Wrapped BTC",     "decimals": 8  },
+    "0xaf88d065e77c8cc2239327c5edb3a432268e5831": { "symbol": "USDC", "name": "USD Coin",         "decimals": 6  },
+    "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": { "symbol": "USDT", "name": "Tether USD",       "decimals": 6  },
+    "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1": { "symbol": "DAI",  "name": "Dai Stablecoin",   "decimals": 18 },
+    "0xf97f4df75117a78c1a5a0dbb814af92458539fb4": { "symbol": "LINK", "name": "ChainLink Token",  "decimals": 18 },
+    "0xfa7f8980b0f1e64a2062791cc3b0871572f1f7f0": { "symbol": "UNI",  "name": "Uniswap",          "decimals": 18 },
+    "0x912ce59144191c1204e64559fe8253a0e49e6548": { "symbol": "ARB",  "name": "Arbitrum",         "decimals": 18 },
+    "0x13ad51ed4f1b7e9dc168d8a00cb3f4ddd85efa60": { "symbol": "LDO",  "name": "Lido DAO Token",  "decimals": 18 }
+  },
+  "chainlinkFeedsByToken": {
+    "0x82af49447d8a07e3bd95bd0d56f35241523fbab1": "0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612",
+    "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f": "0x6ce185860a4963106506C203335A2910413708e9",
+    "0xaf88d065e77c8cc2239327c5edb3a432268e5831": "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
+    "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9": "0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7",
+    "0xda10009cbd5d07dd0cecc66161fc93d7c9000da1": "0xc5C8E77B397A1632dcdfD4dA5709E1e62f9bE167",
+    "0xf97f4df75117a78c1a5a0dbb814af92458539fb4": "0x86E53CF1B873786aC9Cc6e1Bf89E5f91C869Fb28",
+    "0x912ce59144191c1204e64559fe8253a0e49e6548": "0xb2A824043730FE05F3DA2efaFa1CBbe83fa548D6"
+  }
+}

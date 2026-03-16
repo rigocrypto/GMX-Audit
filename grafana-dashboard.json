@@ -1,0 +1,117 @@
+{
+  "title": "GMX Audit Batches",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "tags": [
+    "gmx",
+    "audit",
+    "batch"
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "client",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(gmx_audit_batch_duration_ms, client)",
+        "refresh": 1
+      },
+      {
+        "name": "engagement",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(gmx_audit_batch_duration_ms{client=~\"$client\"}, engagement)",
+        "refresh": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Batch Duration (ms)",
+      "type": "stat",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "avg(gmx_audit_batch_duration_ms{client=~\"$client\",engagement=~\"$engagement\"})"
+        }
+      ]
+    },
+    {
+      "title": "Pass Rate %",
+      "type": "gauge",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "100 * sum(gmx_audit_targets_passed{client=~\"$client\",engagement=~\"$engagement\"}) / clamp_min(sum(gmx_audit_targets_total{client=~\"$client\",engagement=~\"$engagement\"}), 1)"
+        }
+      ]
+    },
+    {
+      "title": "Archive Success %",
+      "type": "gauge",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "100 * avg(gmx_audit_archive_success{client=~\"$client\",engagement=~\"$engagement\"})"
+        }
+      ]
+    },
+    {
+      "title": "Flake Count",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "expr": "sum(gmx_audit_targets_flaked{client=~\"$client\",engagement=~\"$engagement\"}) by (batch_root)"
+        }
+      ]
+    },
+    {
+      "title": "Failed Targets",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "targets": [
+        {
+          "expr": "sum(gmx_audit_target_failed_total{client=~\"$client\",engagement=~\"$engagement\"}) by (batch_root)"
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "name": "Flakes",
+        "type": "dashboard",
+        "enable": true,
+        "expr": "sum(gmx_audit_targets_flaked{client=~\"$client\",engagement=~\"$engagement\"}) > 0"
+      }
+    ]
+  }
+}

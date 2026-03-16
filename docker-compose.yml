@@ -1,0 +1,30 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: gmx-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    restart: unless-stopped
+
+  auditor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gmx-vault-auditor
+    depends_on:
+      - ollama
+    environment:
+      GMX_AI_URL: http://ollama:11434
+      GMX_AI_MODEL: qwen2.5-coder:7b
+      GMX_RPC_URL: https://arb1.arbitrum.io/rpc
+      GMX_AUDIT_BLOCK: "200000000"
+      # Set this before running in production.
+      GMX_VAULT_ADDRESS: ""
+    volumes:
+      - ./outputs:/app/outputs
+    command: ["sh", "-lc", "echo 'Container ready. Set GMX_VAULT_ADDRESS and run audit command.'; tail -f /dev/null"]
+
+volumes:
+  ollama-data:

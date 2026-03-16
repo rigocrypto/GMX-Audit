@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "engagement.manifest.schema.json",
+  "title": "EngagementManifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "clientId",
+    "engagementId",
+    "generatedAt",
+    "targets",
+    "metrics",
+    "preflight"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "clientId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "engagementId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generatedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "passed": {
+      "type": "boolean"
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["index", "chainName", "qaStatus"],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "chainName": {
+            "type": "string"
+          },
+          "qaStatus": {
+            "type": "string",
+            "enum": ["success", "failed", "skipped", "ok"]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "zipHash": {
+            "type": ["string", "null"]
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "batch_duration_ms",
+        "targets_total",
+        "targets_passed",
+        "targets_flaked",
+        "archive_success"
+      ],
+      "properties": {
+        "batch_duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "targets_total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "targets_passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "targets_flaked": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "avg_rpc_grade": {
+          "type": "number"
+        },
+        "top_risk_severity": {
+          "type": "string"
+        },
+        "archive_success": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": true
+    },
+    "preflight": {
+      "type": "object",
+      "required": ["normalized"],
+      "properties": {
+        "integrated": {
+          "type": "boolean"
+        },
+        "normalized": {
+          "type": "object",
+          "required": ["passed"],
+          "properties": {
+            "passed": {
+              "type": ["boolean", "null"]
+            },
+            "targetCount": {
+              "type": "integer"
+            },
+            "rpcGrades": {
+              "type": "array"
+            },
+            "warnings": {
+              "type": "array"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "archiveUrl": {
+      "type": ["string", "null"]
+    },
+    "archiveHash": {
+      "type": ["string", "null"]
+    },
+    "notification": {
+      "type": "object",
+      "properties": {
+        "sent": {
+          "type": "boolean"
+        },
+        "to": {
+          "type": ["string", "null"]
+        },
+        "recipient": {
+          "type": ["string", "null"]
+        },
+        "messageId": {
+          "type": ["string", "null"]
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

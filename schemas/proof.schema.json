@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://gmx-audit.local/schemas/proof.schema.json",
+  "title": "Exploit Proof",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["chain", "block", "detector", "userNet", "poolNet"],
+  "properties": {
+    "chain": {
+      "type": "string",
+      "minLength": 1
+    },
+    "block": {
+      "type": "number"
+    },
+    "detector": {
+      "type": "string",
+      "minLength": 1
+    },
+    "userNet": {
+      "type": "string",
+      "pattern": "^-?[0-9]+$"
+    },
+    "poolNet": {
+      "type": "string",
+      "pattern": "^-?[0-9]+$"
+    },
+    "description": {
+      "type": "string"
+    },
+    "txs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "hash": { "type": "string" },
+          "to": { "type": "string" },
+          "data": { "type": "string" },
+          "desc": { "type": "string" }
+        }
+      }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "repro": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

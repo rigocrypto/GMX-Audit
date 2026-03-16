@@ -1,0 +1,568 @@
+name: Bounty Rotation
+
+on:
+  schedule:
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+    inputs:
+      chain:
+        description: "Chain to scan (arbitrum | avalanche | all)"
+        required: false
+        default: "all"
+      fork_block:
+        description: "Fork block override (empty uses chain default)"
+        required: false
+        default: ""
+      eth_price_usd:
+        description: "ETH price used in triage/package calculations"
+        required: false
+        default: "3400"
+      fetch_eth_price:
+        description: "Fetch live ETH price if ETH_PRICE_USD is empty (1/0)"
+        required: false
+        default: "0"
+      notify:
+        description: "Send Slack alert if proofs found (true/false)"
+        required: false
+        default: "true"
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  ETH_PRICE_USD: ${{ github.event.inputs.eth_price_usd || '3400' }}
+  FETCH_ETH_PRICE: ${{ github.event.inputs.fetch_eth_price || '0' }}
+
+jobs:
+  compile:
+    name: Compile
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Cache deps and artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/
+            artifacts/
+            cache/
+          key: ${{ runner.os }}-gmx-${{ hashFiles('**/package-lock.json', 'hardhat.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-gmx-
+
+  rotate:
+    name: Rotate - ${{ matrix.chain }}
+    needs: compile
+    runs-on: ubuntu-latest
+    concurrency:
+      group: bounty-rotation-${{ matrix.chain }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - chain: arbitrum
+            rpc_secret: ARBITRUM_RPC_URL
+            log_prefix: arb
+            default_fork_block: "420000000"
+          - chain: avalanche
+            rpc_secret: AVALANCHE_RPC_URL
+            log_prefix: ava
+            default_fork_block: "80400000"
+    steps:
+      - name: Gate selected chain
+        id: gate
+        shell: bash
+        run: |
+          SELECTED_CHAIN="${{ github.event.inputs.chain }}"
+          TARGET_CHAIN="${{ matrix.chain }}"
+
+          if [ -z "$SELECTED_CHAIN" ] || [ "$SELECTED_CHAIN" = "all" ] || [ "$SELECTED_CHAIN" = "$TARGET_CHAIN" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.gate.outputs.skip != 'true'
+
+      - name: Setup Node
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Restore deps and artifacts
+        if: steps.gate.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            node_modules/
+            artifacts/
+            cache/
+          key: ${{ runner.os }}-gmx-${{ hashFiles('**/package-lock.json', 'hardhat.config.ts') }}
+          restore-keys: |
+            ${{ runner.os }}-gmx-
+
+      - name: RPC health check
+        if: steps.gate.outputs.skip != 'true'
+        shell: bash
+        env:
+          RPC_URL: ${{ secrets[matrix.rpc_secret] }}
+        run: |
+          if [ -z "$RPC_URL" ]; then
+            echo "Missing RPC secret for ${{ matrix.chain }}"
+            exit 1
+          fi
+
+          RESPONSE=$(curl -sS -X POST "$RPC_URL" \
+            -H 'Content-Type: application/json' \
+            --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}')
+
+          if ! echo "$RESPONSE" | grep -q '"result":"0x'; then
+            echo "RPC health check failed for ${{ matrix.chain }}"
+            echo "$RESPONSE"
+            exit 1
+          fi
+
+      - name: Run exploit search
+        if: steps.gate.outputs.skip != 'true'
+        shell: bash
+        env:
+          RPC_URL: ${{ secrets[matrix.rpc_secret] }}
+          ETH_PRICE_USD: ${{ env.ETH_PRICE_USD }}
+        run: |
+          echo "::add-mask::$RPC_URL"
+          mkdir -p exploit-proofs/rotation-logs
+
+          EFFECTIVE_FORK_BLOCK="${{ github.event.inputs.fork_block }}"
+          if [ -z "$EFFECTIVE_FORK_BLOCK" ]; then
+            EFFECTIVE_FORK_BLOCK="${{ matrix.default_fork_block }}"
+          fi
+
+          export GMX_ENABLE_REAL_MUTATIONS=true
+          export GMX_CHAIN="${{ matrix.chain }}"
+
+          if [ "${{ matrix.chain }}" = "avalanche" ]; then
+            export AVALANCHE_RPC_URL="$RPC_URL"
+            export AVALANCHE_FORK_BLOCK="$EFFECTIVE_FORK_BLOCK"
+            export GMX_ALLOW_AVA_ORACLE_EXECUTE=1
+            npm run test:gmx-exploit-search:ava 2>&1 | tee "exploit-proofs/rotation-logs/${{ matrix.log_prefix }}-ci.log"
+          else
+            export ARBITRUM_RPC_URL="$RPC_URL"
+            export FORK_BLOCK="$EFFECTIVE_FORK_BLOCK"
+            npm run test:gmx-exploit-search:extended 2>&1 | tee "exploit-proofs/rotation-logs/${{ matrix.log_prefix }}-ci.log"
+          fi
+
+      - name: Upload rotation log
+        if: always() && steps.gate.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rotation-log-${{ matrix.chain }}
+          path: |
+            exploit-proofs/rotation-logs/${{ matrix.log_prefix }}-*.log
+            exploit-proofs/rotation-logs/${{ matrix.log_prefix }}-ci.log
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Upload proofs (if any)
+        if: always() && steps.gate.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: exploit-proofs-${{ matrix.chain }}
+          path: exploit-proofs/*.json
+          if-no-files-found: ignore
+          retention-days: 90
+
+  triage:
+    name: Triage
+    needs: [rotate]
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      has_critical: ${{ steps.outputs.outputs.has_critical }}
+      has_high: ${{ steps.outputs.outputs.has_high }}
+      proof_count: ${{ steps.outputs.outputs.proof_count }}
+      summary_text: ${{ steps.outputs.outputs.summary_text }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure jq is available
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run smoke tests
+        run: npm run smoke:all
+
+      - name: Download all proofs
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: exploit-proofs-*
+          path: exploit-proofs/
+          merge-multiple: true
+
+      - name: Run triage
+        id: run-triage
+        shell: bash
+        run: |
+          mkdir -p outputs/triage
+          set +e
+          npm run triage:ci
+          TRIAGE_EXIT=$?
+          set -e
+          echo "triage_exit=${TRIAGE_EXIT}" >> "$GITHUB_OUTPUT"
+
+          if [ ! -f outputs/triage/triage-result.json ]; then
+            cat > outputs/triage/triage-result.json <<'EOF'
+            {
+              "schema_version": 1,
+              "triage_tool_version": "unknown",
+              "eth_price_used": "3400",
+              "eth_price_source": "fallback",
+              "has_critical": false,
+              "has_high": false,
+              "total_proofs": 0,
+              "total_usd_impact": "$0.00",
+              "summary_text": "No proofs detected.",
+              "proofs": []
+            }
+            EOF
+          fi
+
+      - name: Validate triage schema version
+        shell: bash
+        run: |
+          VERSION=$(jq -r '(.schema_version // "missing") | tostring' outputs/triage/triage-result.json)
+          if [ "$VERSION" = "missing" ]; then
+            echo "ERROR: triage-result.json missing schema_version (likely generated by old triage.ts)"
+            exit 1
+          fi
+          if [ "$VERSION" != "1" ]; then
+            echo "ERROR: unexpected schema version '$VERSION' (expected 1)"
+            exit 1
+          fi
+
+          jq -e '.proofs | type == "array"' outputs/triage/triage-result.json >/dev/null
+          jq -e 'has("total_proofs") and has("has_critical") and has("has_high") and has("summary_text") and has("eth_price_used") and has("eth_price_source") and has("triage_tool_version")' outputs/triage/triage-result.json >/dev/null
+          echo "Schema version OK: $VERSION"
+
+      - name: Log triage pricing metadata
+        shell: bash
+        run: |
+          PRICE=$(jq -r '.eth_price_used // "unknown"' outputs/triage/triage-result.json)
+          SOURCE=$(jq -r '.eth_price_source // "unknown"' outputs/triage/triage-result.json)
+          TOOL_VERSION=$(jq -r '.triage_tool_version // "unknown"' outputs/triage/triage-result.json)
+          echo "triage pricing: $PRICE ($SOURCE)"
+          echo "triage tool version: $TOOL_VERSION"
+
+      - name: Export triage outputs
+        id: outputs
+        shell: bash
+        run: |
+          mkdir -p .outputs
+          jq -r '(.has_critical // false) | tostring' outputs/triage/triage-result.json > .outputs/has_critical
+          jq -r '(.has_high // false) | tostring' outputs/triage/triage-result.json > .outputs/has_high
+          jq -r '(.total_proofs // 0) | tostring' outputs/triage/triage-result.json > .outputs/proof_count
+          jq -r '(.summary_text // "No proofs detected.") | .[0:1000]' outputs/triage/triage-result.json > .outputs/summary_text
+
+          echo "has_critical=$(cat .outputs/has_critical)" >> "$GITHUB_OUTPUT"
+          echo "has_high=$(cat .outputs/has_high)" >> "$GITHUB_OUTPUT"
+          echo "proof_count=$(cat .outputs/proof_count)" >> "$GITHUB_OUTPUT"
+          {
+            echo "summary_text<<EOF"
+            cat .outputs/summary_text
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload triage result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: triage-result
+          path: outputs/triage/triage-result.json
+          if-no-files-found: ignore
+          retention-days: 30
+
+  alert:
+    name: Alert
+    needs: triage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    if: |
+      always() &&
+      (needs.triage.outputs.has_critical == 'true' ||
+       needs.triage.outputs.has_high == 'true')
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download triage result
+        uses: actions/download-artifact@v4
+        with:
+          name: triage-result
+          path: outputs/triage/
+
+      - name: Create GitHub issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const triagePath = 'outputs/triage/triage-result.json';
+            const triage = JSON.parse(fs.readFileSync(triagePath, 'utf8'));
+
+            const hasCritical = Boolean(triage.has_critical);
+            const proofCount = Number(triage.total_proofs || 0);
+            const severity = hasCritical ? 'CRITICAL' : 'HIGH';
+            const mark = hasCritical ? '[CRITICAL]' : '[HIGH]';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const proofHashes = (triage.proofs || []).map((p) => p.proof_hash).filter(Boolean);
+            const contentHashes = (triage.proofs || []).map((p) => p.content_hash).filter(Boolean);
+
+            const q = `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open label:bounty-candidate`;
+            const search = await github.rest.search.issuesAndPullRequests({ q, per_page: 100 });
+
+            const existingIssue = search.data.items.find((issue) => {
+              const body = String(issue.body || '');
+              return proofHashes.some((hash) => body.includes(hash));
+            });
+
+            if (existingIssue) {
+              const body = String(existingIssue.body || '');
+              const hasAllContentHashes = contentHashes.length > 0 && contentHashes.every((hash) => body.includes(hash));
+              const statusLabels = (existingIssue.labels || [])
+                .map((label) => (typeof label === 'string' ? label : label.name || ''))
+                .filter(Boolean);
+              const processedStatus = statusLabels.find((label) =>
+                ['status:submitted', 'status:resolved', 'status:wont-fix'].includes(label)
+              );
+
+              const previousImpact = (body.match(/Estimated impact \(aggregate\):\s*([^\n]+)/)?.[1] || 'unknown').trim();
+              const newImpact = String(triage.total_usd_impact || '$0.00');
+              const previousEthPrice = (body.match(/ETH price used:\s*([^\n]+)/)?.[1] || 'unknown').trim();
+              const newEthPrice = `${triage.eth_price_used || 'unknown'} (${triage.eth_price_source || 'unknown'})`;
+              const contentSectionMatch = body.match(/### Content Hashes\n([\s\S]*?)(?:\n###|$)/);
+              const contentSection = contentSectionMatch ? contentSectionMatch[1] : '';
+              const previousContentHashes = [...contentSection.matchAll(/^-\s*([0-9a-f]{12})$/gmi)].map((m) => m[1]);
+              const previousHashCell = previousContentHashes.length > 0 ? previousContentHashes.join(', ') : 'unknown';
+              const newHashCell = contentHashes.length > 0 ? contentHashes.join(', ') : 'none';
+
+              if (processedStatus && hasAllContentHashes) {
+                console.log(`Skipping ${proofHashes.join(',')} — already ${processedStatus} and content unchanged`);
+                return;
+              }
+
+              const hashChanged = !hasAllContentHashes;
+              const mode = hashChanged ? 'Updated content hash detected' : 'Re-detected';
+              const statusLine = processedStatus
+                ? `\nStatus: ${processedStatus} (verify if this represents a new variant)`
+                : '';
+
+              const commentBody = hashChanged
+                ? [
+                    `${mode} on run [${context.runId}](${runUrl}) at ${new Date().toISOString()}`,
+                    statusLine,
+                    '',
+                    '| Field | Old | New |',
+                    '|-------|-----|-----|',
+                    `| content_hash | ${previousHashCell} | ${newHashCell} |`,
+                    `| total_usd_impact | ${previousImpact} | ${newImpact} |`,
+                    `| eth_price_used | ${previousEthPrice} | ${newEthPrice} |`,
+                    '',
+                    'If impact changed only due to ETH price, this may not indicate a new variant.',
+                    '',
+                    `Dedupe hashes: ${proofHashes.join(', ') || 'none'}`,
+                    `Content hashes: ${newHashCell}`
+                  ].join('\n')
+                : [
+                    `${mode} on run [${context.runId}](${runUrl}) at ${new Date().toISOString()}`,
+                    statusLine,
+                    '',
+                    `Impact unchanged context: ${newImpact}`,
+                    `Content unchanged: ${newHashCell}`,
+                    '',
+                    `Dedupe hashes: ${proofHashes.join(', ') || 'none'}`,
+                    `Content hashes: ${newHashCell}`
+                  ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssue.number,
+                body: commentBody
+              });
+              return;
+            }
+
+            const body = [
+              `## Bounty Candidate Detected - ${severity}`,
+              '',
+              `Proofs found: ${proofCount}`,
+              `Estimated impact (aggregate): ${triage.total_usd_impact || '$0.00'}`,
+              `ETH price used: ${triage.eth_price_used || 'unknown'} (${triage.eth_price_source || 'unknown'})`,
+              `Triage tool version: ${triage.triage_tool_version || 'unknown'}`,
+              `Run: ${runUrl}`,
+              `Time: ${new Date().toISOString()}`,
+              '',
+              '### Dedupe Hashes',
+              ...(proofHashes.length > 0 ? proofHashes.map((h) => `- ${h}`) : ['- none']),
+              '',
+              '### Content Hashes',
+              ...(contentHashes.length > 0 ? contentHashes.map((h) => `- ${h}`) : ['- none']),
+              '',
+              '### Triage Summary',
+              '```',
+              String(triage.summary_text || '').slice(0, 6000),
+              '```',
+              '',
+              '### Next Steps',
+              '1. Download exploit-proofs artifacts from this run.',
+              '2. Run npm run proof:package -- --file <proof.json> --outDir proof-packages --price <ETH_PRICE>.',
+              '3. Review immunefi-report.md and submit.'
+            ].join('\n');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `${mark} ${triage.total_usd_impact || '$0.00'} bounty proof(s) detected - ${new Date().toISOString().slice(0, 10)}`,
+              body,
+              labels: ['security', severity.toLowerCase(), 'bounty-candidate', 'status:new']
+            });
+
+      - name: Slack alert (optional)
+        if: github.event.inputs.notify != 'false'
+        shell: bash
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "SLACK_WEBHOOK_URL not set, skipping notification."
+            exit 0
+          fi
+          SUMMARY=$(jq -r '(.summary_text // "No proofs detected.") | .[0:2500]' outputs/triage/triage-result.json | sed 's/"/\\"/g')
+          PAYLOAD=$(cat <<JSON
+          {"text":"Bounty candidate detected in gmx-audit\n${SUMMARY}\nRun: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}
+          JSON
+          )
+          curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"
+
+  auto-package:
+    name: Auto Package
+    needs: triage
+    runs-on: ubuntu-latest
+    if: needs.triage.outputs.proof_count != '0'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all proofs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: exploit-proofs-*
+          path: exploit-proofs/
+          merge-multiple: true
+
+      - name: Package all proofs
+        shell: bash
+        run: |
+          shopt -s nullglob
+          mkdir -p proof-packages
+          COUNT=0
+          for proof in exploit-proofs/*.json; do
+            [[ "$proof" == *".gitkeep"* ]] && continue
+            [ -f "$proof" ] || continue
+            npm run proof:package -- --file "$proof" --outDir proof-packages --price "${{ env.ETH_PRICE_USD }}"
+            COUNT=$((COUNT + 1))
+            if [ "$COUNT" -ge 5 ]; then
+              break
+            fi
+          done
+          echo "Packaged: $COUNT proof(s)"
+
+      - name: Upload proof packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: immunefi-ready-packages
+          path: proof-packages/
+          if-no-files-found: ignore
+          retention-days: 90
+
+  dashboard:
+    name: Dashboard
+    needs: [triage, rotate]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download all rotation logs
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rotation-log-*
+          path: exploit-proofs/rotation-logs/
+          merge-multiple: true
+
+      - name: Download all proofs
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: exploit-proofs-*
+          path: exploit-proofs/
+          merge-multiple: true
+
+      - name: Generate dashboard
+        run: |
+          mkdir -p outputs/metrics
+          npm run dashboard -- --db outputs/metrics/results.db --out outputs/metrics/dashboard.html
+
+      - name: Upload dashboard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-dashboard
+          path: |
+            outputs/metrics/dashboard.html
+            outputs/metrics/results.db
+          if-no-files-found: ignore
+          retention-days: 90

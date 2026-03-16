@@ -1,0 +1,36 @@
+name: Demo Assets Refresh
+
+on:
+  workflow_dispatch:
+
+jobs:
+  refresh-demo-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for Playwright
+        run: npm run capture:setup
+
+      - name: Refresh demo assets
+        run: npm run demo:refresh
+
+      - name: Upload demo assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-assets
+          path: |
+            docs/assets/sample-report-exec.png
+            docs/assets/sample-report-markets.png
+            docs/demo/LATEST_BUNDLE.txt
+            docs/demo/DEMO_BUNDLE_OVERRIDE.txt

@@ -1,0 +1,37 @@
+# Build and runtime outputs
+artifacts/
+cache/
+typechain-types/
+outputs/
+proof-packages/
+exploit-proofs/*.json
+*.db
+dashboard.html
+
+!outputs/metrics/.gitkeep
+!outputs/triage/.gitkeep
+!outputs/proposals/.gitkeep
+!outputs/demo/.gitkeep
+
+# Logs
+*.log
+*.out.txt
+arb_run.log
+arb_deliverable.log
+open-long-raw.txt
+open-long.out.txt
+real-mutation.out.txt
+sim-out.txt
+verifyFork.out.txt
+
+# Local nested worktrees
+gmx-synthetics/
+gmx-synthetics.worktrees/
+
+# Node
+node_modules/
+
+# Local secrets
+.env
+.env.*
+!.env.example

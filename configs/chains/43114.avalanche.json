@@ -1,0 +1,43 @@
+{
+  "chainId": 43114,
+  "name": "avalanche",
+  "explorer": {
+    "type": "snowtrace",
+    "apiBase": "https://api.routescan.io/v2/network/mainnet/evm/43114/etherscan"
+  },
+  "gmxV1": {
+    "vault": ""
+  },
+  "gmxV2": {
+    "dataStore": "0x2F0b22339414ADeD7D5F06f9D604c7fF5b2fe3f6",
+    "reader": "0x62Cb8740E6986B29dC671B2EB596676f60590A5B",
+    "vault": "0x6D5F3c723002847B009D07Fe8e17d6958F153E4e",
+    "vaults": [
+      "0x6D5F3c723002847B009D07Fe8e17d6958F153E4e",
+      "0x90c670825d0C62ede1c5ee9571d6d9a17A722DFF",
+      "0xD3D60D22d415aD43b7e64b510D86A30f19B1B12C"
+    ]
+  },
+  "nativeWrappedToken": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+  "archiveRpcHint": "Use Infura/Alchemy/QuickNode Avalanche archive endpoint for pinned-block completeness.",
+  "tokenMetadata": {
+    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7": { "symbol": "WAVAX", "name": "Wrapped AVAX", "decimals": 18 },
+    "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB": { "symbol": "WETH.e", "name": "Wrapped Ether", "decimals": 18 },
+    "0x50b7545627a5162F82A992c33b87aDc75187B218": { "symbol": "WBTC.e", "name": "Wrapped BTC", "decimals": 8 },
+    "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E": { "symbol": "USDC", "name": "USD Coin", "decimals": 6 },
+    "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7": { "symbol": "USDt", "name": "TetherToken", "decimals": 6 },
+    "0xD586E7F844cEa2F87f50152665BCbc2C279D8d70": { "symbol": "DAI.e", "name": "Dai Stablecoin", "decimals": 18 },
+    "0xFE6B19286885a4F7F55AdAD09C3Cd1f906D2478F": { "symbol": "SOL", "name": "Wrapped SOL", "decimals": 9 },
+    "0xC7198437980c041c805A1EDcbA50c1Ce5db95118": { "symbol": "USDT.e", "name": "Tether USD", "decimals": 6 },
+    "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664": { "symbol": "USDC.e", "name": "USD Coin", "decimals": 6 },
+    "0x152b9d0FdC40C096757F570A51E494bd4b943E50": { "symbol": "BTC.b", "name": "Bitcoin", "decimals": 8 },
+    "0x2775d5105276781B4b85bA6eA6a6653bEeD1dd32": { "symbol": "XAUt0", "name": "XAUt0", "decimals": 6 }
+  },
+  "chainlinkFeedsByToken": {
+    "0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e": "0xF096872672F0bE9Dd7Ade7C1ac5A98574c8FfDC5",
+    "0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7": "0x7898AcCC83587C3C55116c5230C17a6Cd9C71bad",
+    "0xd586e7f844cea2f87f50152665bcbc2c279d8d70": "0x51D7180edA2260cc4F6e4EebB82FEF5c3c2B8300",
+    "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab": "0x976B3D034E162d8bD72D6b9C989d545b839003b0",
+    "0x50b7545627a5162f82a992c33b87adc75187b218": "0x2779D32d5166BAaa2A39B69a1B7a8084d97C9D03"
+  }
+}

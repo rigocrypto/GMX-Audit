@@ -1,0 +1,222 @@
+name: Audit Batch CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  demo-integrity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run smoke checks
+        run: npm run smoke:all
+
+      - name: Run demo proof flow
+        run: npm run demo:proof -- --price 3400
+
+  gmx-invariants:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run GMX Invariant Harness
+        env:
+          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+          FORK_BLOCK: ${{ secrets.GMX_FORK_BLOCK }}
+        run: npm run test:gmx-invariants
+
+  billing-queue-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Billing Queue Harness
+        env:
+          BILLING_TEST_TIMEOUT_MS: 2000
+        run: npm run billing:test
+
+  audit-batch:
+    runs-on: ubuntu-latest
+    env:
+      BATCH_USE_DOCKER: ${{ secrets.BATCH_USE_DOCKER }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Clean Outputs
+        run: rm -rf outputs/bundles outputs/metrics && mkdir -p outputs/bundles outputs/metrics
+
+      - name: Build Docker Image
+        run: docker build -t gmx-audit:ci .
+
+      - name: Preflight (strict)
+        run: npm run preflight -- --intake docs/intake-template.json --strict
+
+      - name: Deliverable (strict fail-fast)
+        env:
+          BATCH_ARCHIVE_TARGET: ${{ secrets.BATCH_ARCHIVE_TARGET }}
+          BATCH_NOTIFY_EMAIL: ${{ secrets.BATCH_NOTIFY_EMAIL }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
+          PINATA_API_SECRET: ${{ secrets.PINATA_API_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: |
+          if [ "$BATCH_USE_DOCKER" = "1" ]; then
+            echo "BATCH_USE_DOCKER=1 set; skipping host deliverable run."
+            exit 0
+          fi
+          ARGS="--intake docs/intake-template.json --batch-preflight 1 --batch-retry 2 --batch-retry-backoff-ms 1000 --strict --batch-fail-fast"
+          if [ -n "$BATCH_ARCHIVE_TARGET" ]; then
+            ARGS="$ARGS --batch-archive $BATCH_ARCHIVE_TARGET"
+          fi
+          if [ -n "$BATCH_NOTIFY_EMAIL" ]; then
+            ARGS="$ARGS --batch-notify $BATCH_NOTIFY_EMAIL"
+          fi
+          npm run deliverable -- $ARGS
+
+      - name: Deliverable In Docker (optional)
+        if: always() && env.BATCH_USE_DOCKER == '1'
+        env:
+          BATCH_ARCHIVE_TARGET: ${{ secrets.BATCH_ARCHIVE_TARGET }}
+          BATCH_NOTIFY_EMAIL: ${{ secrets.BATCH_NOTIFY_EMAIL }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
+          PINATA_API_SECRET: ${{ secrets.PINATA_API_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SECURE: ${{ secrets.SMTP_SECURE }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: |
+          ARGS="--intake docs/intake-template.json --batch-preflight 1 --batch-retry 2 --batch-retry-backoff-ms 1000 --strict --batch-fail-fast"
+          if [ -n "$BATCH_ARCHIVE_TARGET" ]; then
+            ARGS="$ARGS --batch-archive $BATCH_ARCHIVE_TARGET"
+          fi
+          if [ -n "$BATCH_NOTIFY_EMAIL" ]; then
+            ARGS="$ARGS --batch-notify $BATCH_NOTIFY_EMAIL"
+          fi
+          docker run --rm \
+            -e AWS_REGION \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_SESSION_TOKEN \
+            -e PINATA_JWT \
+            -e PINATA_API_KEY \
+            -e PINATA_API_SECRET \
+            -e SMTP_HOST \
+            -e SMTP_PORT \
+            -e SMTP_SECURE \
+            -e SMTP_USER \
+            -e SMTP_PASS \
+            -e EMAIL_FROM \
+            -v "$PWD/outputs:/app/outputs" \
+            gmx-audit:ci $ARGS
+
+      - name: Validate Engagement Manifests
+        if: always()
+        run: npm run manifest:validate
+
+      - name: Schema Round-Trip Check
+        if: always()
+        run: npm run manifest:roundtrip
+
+      - name: Export Metrics
+        if: always()
+        run: npm run metrics:export
+
+      - name: Verify Metrics Export
+        if: always()
+        run: npm run metrics:test
+
+      - name: Upload Bundles Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-bundles-${{ github.run_number }}
+          path: outputs/bundles/
+          if-no-files-found: warn
+
+      - name: Upload Metrics Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-metrics-${{ github.run_number }}
+          path: |
+            outputs/metrics/
+            grafana-dashboard.json
+          if-no-files-found: warn
+
+      - name: Notify Slack (optional)
+        if: always() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ job.status }}"
+          REPO="${{ github.repository }}"
+          REF="${{ github.ref_name }}"
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          MESSAGE="Audit Batch CI ${STATUS} for ${REPO} (${REF}) - ${RUN_URL}"
+          PAYLOAD=$(printf '{"text":"%s"}' "$MESSAGE")
+          curl -X POST -H 'Content-type: application/json' --data "$PAYLOAD" "$SLACK_WEBHOOK_URL"

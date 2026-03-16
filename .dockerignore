@@ -1,0 +1,11 @@
+node_modules
+outputs
+cache
+artifacts
+.qodo
+npm-debug.log*
+.DS_Store
+.git
+.gitignore
+.github
+*.zip

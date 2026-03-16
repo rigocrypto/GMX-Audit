@@ -1,0 +1,28 @@
+{
+  "client": "DemoProtocol",
+  "engagement": "collateral-review-q1-2024",
+  "targets": [
+    {
+      "chainId": 42161,
+      "rpc": "https://arb1.arbitrum.io/rpc",
+      "mode": "auto",
+      "block": "latest"
+    },
+    {
+      "chainId": 43114,
+      "rpc": "https://api.avax.network/ext/bc/C/rpc",
+      "mode": "v2",
+      "block": "latest"
+    }
+  ],
+  "archiveRpcAvailable": false,
+  "deliverableLevel": "full",
+  "deliverables": {
+    "ai": true,
+    "security": true,
+    "diff": false
+  },
+  "securityPolicy": {
+    "allowPartialSecurity": false
+  }
+}

@@ -1,0 +1,4 @@
+bundle=RigoCrypto_v2-live-arbitrum-parity_arbitrum_0xceaadfaf6a8c489b250e407987877c5fdfcdbe6e_441411191_20260313
+selection=override
+capturedAt=2026-03-13T17:39:56.811Z
+reportPath=C:\Users\servi\gmx-audit\outputs\bundles\RigoCrypto_v2-live-arbitrum-parity_arbitrum_0xceaadfaf6a8c489b250e407987877c5fdfcdbe6e_441411191_20260313\report.html
