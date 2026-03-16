@@ -2,8 +2,8 @@
 
 Deterministic GMX security harness for invariant hunting, triage, and Immunefi-ready proof packaging.
 
-[![Bounty Rotation CI](https://github.com/servi/gmx-audit/actions/workflows/bounty-rotation.yml/badge.svg?branch=main)](https://github.com/servi/gmx-audit/actions/workflows/bounty-rotation.yml)
-[![Audit Batch CI](https://github.com/servi/gmx-audit/actions/workflows/audit-batch.yml/badge.svg?branch=main)](https://github.com/servi/gmx-audit/actions/workflows/audit-batch.yml)
+[![Bounty Rotation CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml)
+[![Audit Batch CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml)
 ![Demo](https://img.shields.io/badge/demo-proof-green)
 ![License](https://img.shields.io/badge/license-MIT-black)
 
