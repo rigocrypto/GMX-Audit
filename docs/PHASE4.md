@@ -12,9 +12,16 @@ npm run test:gmx-exploit-search:ava -- --grep "executeWithdrawal"
 
 Latest result:
 
-- Test discovered: `Withdrawal Lifecycle [WAVAX/USDC] -> executeWithdrawal: payout <= fair share of pool (no excess extraction)`
-- Outcome: `0 passing, 1 pending`
-- Interpretation: Gate A is not cleared yet; this is still blocked by fork/runtime conditions.
+- Default run outcome: `0 passing, 1 pending`
+- Skip condition in test: avalanche + `GMX_ALLOW_AVA_ORACLE_EXECUTE !== "1"` (explicit guard in the spec)
+- Unblocked run command:
+
+```bash
+$env:GMX_ALLOW_AVA_ORACLE_EXECUTE='1' ; npm run test:gmx-exploit-search:ava -- --grep "executeWithdrawal"
+```
+
+- Unblocked run outcome: `1 passing`
+- Interpretation: Gate A can be executed and currently passes when oracle execution is explicitly enabled.
 
 ## Gate B (Must): executeOrder market-increase path
 
@@ -39,8 +46,8 @@ git diff --no-index -- outputs/oracle-store-arb.sol outputs/oracle-store-ava.sol
 Latest result:
 
 - No textual diff output between saved Arb/Ava OracleStore snapshots.
-- Interpretation: this sample indicates no obvious source drift in the compared snapshot pair.
-- Caution: ensure addresses are implementation contracts (not proxies) before final conclusion.
+- Sanity check: both local files were empty (`Length = 0`), so this comparison is not valid evidence.
+- Interpretation: Gate C remains open; refetch source from explorer and compare implementation contracts (not proxies).
 
 ## Gate D (Nice, but high value): Slither reentrancy/delegatecall triage
 
@@ -77,6 +84,19 @@ Scoped examples:
   - `reentrancy-benign` at `contracts/oracle/Oracle.sol:112`
   - `reentrancy-benign` at `contracts/oracle/Oracle.sol:183`
   - `reentrancy-benign` at `contracts/oracle/Oracle.sol:104`
+
+Exploitability triage for high-signal `arbitrary-send-*`:
+
+- `contracts/multichain/LayerZeroProvider.sol:191` (`bridgeOut`): `onlyController`; requires privileged controller flow.
+- `contracts/contributor/ContributorHandler.sol:99` (`sendPayments`): `onlyContributorDistributor`; permissioned distribution role.
+- `contracts/router/Router.sol:26` (`pluginTransfer`): `onlyRouterPlugin`; called through approved plugin paths.
+- `contracts/market/PositionImpactPoolUtils.sol:153` (`reduceLentAmount`): library call site is `ConfigTimelockController.reduceLentImpactAmount`, gated by `onlySelf` execution.
+- `contracts/fee/FeeDistributor.sol:457` (`_bridgeGmx`) and `contracts/fee/FeeDistributor.sol:542` (`_finalizeWntForTreasury`): internal distribution flow; entrypoints are keeper/reader gated.
+
+Oracle detector mix (important):
+
+- Oracle-scoped findings are only `reentrancy-benign`, `reentrancy-events`, and `reentrancy-no-eth`.
+- No Oracle-scoped `arbitrary-send-*` findings in this run.
 
 ## Minimal Ship Checklist
 

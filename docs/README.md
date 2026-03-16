@@ -7,10 +7,10 @@ Use only two docs for current execution state:
 
 ## Current Gate Status
 
-- Gate A (`executeWithdrawal: payout <= fair share`): `PENDING` on Avalanche fork
-- Gate B (`executeOrder` critical path): not run in this pass
-- Gate C (one Oracle source diff): completed (local Arb/Ava snapshots are identical)
-- Gate D (Slither reentrancy/delegatecall pass): completed (triaged; follow-up review required)
+- Gate A (`executeWithdrawal: payout <= fair share`): `PASS` when `GMX_ALLOW_AVA_ORACLE_EXECUTE=1`; default run remains pending by design.
+- Gate B (`executeOrder` critical path): not run in this pass.
+- Gate C (one Oracle source diff): `NOT VALIDATED` in this pass; local source snapshot files were empty.
+- Gate D (Slither reentrancy/delegatecall pass): completed and triaged; highest-signal findings are access-control constrained.
 
 ## Evidence Files
 
