@@ -1,18 +1,114 @@
 # gmx-audit
 
-Deterministic GMX security harness for invariant hunting, triage, and Immunefi-ready proof packaging.
+Deterministic GMX security harness for **invariant hunting**, **continuous regression**, and **Immunefi-ready proof packaging** (plus a managed service option for protocol teams).
 
 [![Bounty Rotation CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml)
 [![Audit Batch CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml)
-![Demo](https://img.shields.io/badge/demo-proof-green)
-![License](https://img.shields.io/badge/license-MIT-black)
+[![Secret Scan](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml)
 
-- Continuous operations guide: [docs/continuous-security.md](docs/continuous-security.md)
-- Security policy: [SECURITY.md](SECURITY.md)
-- Contribution guide: [CONTRIBUTING.md](CONTRIBUTING.md)
+**Docs**
+- Continuous operations: `docs/continuous-security.md`
+- Managed service (hosted/retainer): `docs/managed-service.md`
+- Security policy: `SECURITY.md`
+- Contributing: `CONTRIBUTING.md`
+- License: MIT (`LICENSE`)
 
-## One-Command Bounty Hunt
+---
 
+## Who this is for
+
+### Protocol teams (GMX forks / perpetuals / DeFi)
+You want **continuous security monitoring** you can explain to non-security stakeholders:
+- nightly regression scans
+- “Security Score” trend
+- alerts when a real economic invariant breaks
+- reproducible evidence bundles
+
+### Hunters / auditors
+You want:
+- deterministic fork-based runs over historical blocks
+- automated **triage + severity**
+- **proof package** and **Immunefi-ready report** in minutes (demo or real)
+
+### Enterprise security & ops
+You want:
+- repeatable runs, stored artifacts, and audit trail
+- minimal manual effort
+- clear outputs to drive escalation
+
+---
+
+## What you get (customer value)
+
+### 1) Deterministic proof -> Immunefi-ready package
+When a run yields a **bounty candidate**, you get a reproducible bundle:
+- `proof.json` + `summary.json`
+- `repro.sh` + `repro.ps1` (exact commands)
+- `immunefi-report.md` (ready to submit)
+- economic impact shown with **signed USD** (`+$` attacker gain / `-$` pool loss) and **ETH price basis**
+
+### 2) Continuous regression + “Security Score”
+For ongoing monitoring:
+- dashboard HTML (no CDN) + SQLite history
+- trend chart over recent runs
+- filters (chain, blocks, proofs-only, failures-only)
+- score formula is deterministic and client-friendly
+
+### 3) CI automation (multi-chain)
+GitHub Actions workflows support:
+- scheduled runs
+- triage output contract (`schema_version`)
+- safe dedupe behavior (content hash vs identity)
+- secret scanning on PRs
+
+### 4) Managed/Hosted Service Mode (Option B)
+If you don’t want to operate it:
+- multi-client config
+- scheduled execution
+- hosted token-protected dashboards
+- alerts + artifacts per client run
+- retention pruning + retries + overlap locks
+
+---
+
+## Pricing (how customers pay)
+
+This repo is **OSS**. You can clone and run it for free.
+
+Customers pay for the **managed service**: operation + customization + SLA + reporting + integrations.
+
+### Managed Retainer Tiers (recommended)
+| Tier | Best for | Includes | Price (USD) |
+|---|---|---|---:|
+| **CI Basic** | teams that just want a gate | nightly/weekly rotation, triage + alerts, artifacts | **$500/mo** |
+| **Regression Pro** | teams shipping frequently | + dashboard trend, score reporting, weekly digest, tuning pendings | **$2,500/mo** |
+| **Bounty Enterprise** | high TVL / high stakes | + custom invariants, incident response window, white-label reports, priority support | **$8,000/mo** |
+| **Custom** | enterprise/compliance | dedicated infra/RPC, SSO portal, ticketing integrations | **$15,000+/mo** |
+
+**Typical setup fee (optional):** $3k-$15k depending on custom invariants and protocol complexity.  
+**Optional success fee:** negotiated for confirmed paid bounties (if desired).
+
+**How to start paid service:** open an issue or email the contact in `SECURITY.md` (or add your sales email here).
+
+---
+
+## How it works (high level)
+
+1. **Fork-based execution** on historical blocks (archive RPC required)
+2. **Invariant suite / exploit search** runs deterministically
+3. **Triage** generates:
+   - severity (Critical/High/Medium)
+   - stable identity key + content hash (dedupe-safe)
+   - USD impact with recorded ETH price and source
+4. **Packaging** turns proofs into submission-ready bundles
+5. **Dashboard** summarizes runs and scores over time
+6. **(Managed mode)** schedules and serves dashboards for multiple clients
+
+---
+
+## Quickstart (OSS, 5 minutes)
+
+### One-command bounty hunt (CI-style)
 ```bash
 npm ci
 cp .env.example .env
@@ -20,222 +116,97 @@ npm run bounty-rotation
 ```
 
 What this runs:
-
 - extended exploit-search suite
-- triage result generation (`outputs/triage/triage-result.json`)
-- dashboard generation (`outputs/metrics/dashboard.html`)
+- triage output: `outputs/triage/triage-result.json`
+- dashboard output: `outputs/metrics/dashboard.html`
 
-## Supported Environments
+---
 
-- Node.js 20.x
-- GitHub Actions `ubuntu-latest`
-- Windows PowerShell (local commands and repro scripts)
+## Demo Mode (no live finding required)
 
-RPC expectations:
-
-- Archive RPC is required for deterministic historical fork reads.
-- `eth_blockNumber` is required for preflight health checks.
-- Read-heavy endpoints are expected; do not use state-changing mainnet paths.
-
-## Demo Mode (No Live Finding Required)
-
-Generate a deterministic synthetic proof and package it into an Immunefi-ready bundle:
+Use this to onboard or record a demo without claiming a real exploit:
 
 ```bash
 npm run demo:proof -- --price 2172.24
 ```
 
-By default this writes to isolated demo-only paths:
-
+Outputs are isolated (won’t pollute real proof paths):
 - `outputs/demo/proofs/demo-proof.json`
-- `outputs/demo/proof-packages/...`
+- `outputs/demo/proof-packages/.../immunefi-report.md`
 
-This is intended for product demos and onboarding. It does not claim a live exploit.
+**Truth-in-reporting note:** use “bounty candidate” unless a human-reviewed submission is ready.
 
-## Scope and Truth-in-Reporting
+---
 
-- Use the term "bounty candidate" unless a human-reviewed submission is ready.
-- Keep price basis explicit in report output and triage metadata.
-- Prefer sanitized bundle sharing for public demos.
-- Preferred claim language: "Immunefi-ready proof package in ~2 minutes (demo)".
+## Managed/Hosted Mode (for customers)
 
-## Common Failures
-
-- RPC rate limits (`429`/timeouts): retry with backoff or switch provider.
-- Missing archive access: set a proper archive endpoint in `.env`.
-- Log encoding artifacts on Windows: use UTF-8 terminal output when piping logs.
-
-## Quick Start (Vault Audit Path)
-
-1. Install dependencies:
-
+Run a client scan once:
 ```bash
-npm install
+npm run managed:run -- --client example --once --price 3400
 ```
 
-1. Run an AI-enabled audit (pass vault via CLI):
-
+Run scheduler:
 ```bash
-npm run audit:ai -- 0x489ee077994B6658eAfA855C308275EAd8097C4A --block 200000000 --rpc https://arb1.arbitrum.io/rpc
+npm run managed:scheduler -- --client all
 ```
 
-1. Output bundle example:
-
-```text
-outputs/bundles/arbitrum_0x489ee077994b6658eafa855c308275ead8097c4a_200000000/
+Serve dashboards (token auth):
+```bash
+npm run managed:serve
 ```
 
-## GMX v2 Arbitrum Invariant Suite
+Details: `docs/managed-service.md`
 
-Current result: 22 passing, 0 pending.
+---
 
-Environment:
+## Supported environments
 
-- network: Arbitrum
-- fork pin: block `420000000`
-- markets: WETH/USDC and WBTC/USDC
+- Node.js **20.x**
+- GitHub Actions `ubuntu-latest`
+- Windows PowerShell (local commands and repro scripts)
 
-Profiles:
+### RPC expectations
+- **Archive RPC required** for deterministic historical fork reads
+- `eth_blockNumber` required for preflight checks
+- Runs are read-heavy; don’t use endpoints not intended for archive access
 
-- fast (CI gate): `npm run test:gmx-invariants`
-- stress (nightly/manual): `npm run test:gmx-invariants:stress`
+---
 
-Suite inventory:
+## Common failures (and fixes)
 
-- `test/gmx-invariants/vaultAccounting.spec.ts`: fee attribution and pool accounting round-trip
-- `test/gmx-invariants/liquidation.spec.ts`: liquidation safety, position clearing, solvency boundaries
-- `test/gmx-invariants/glpAum.spec.ts`: AUM and exchange-router vs vault accounting consistency
-- `test/gmx-invariants/sequenceDrift.spec.ts`: open -> partial close -> increase -> overwithdraw -> liquidate regression
+- **RPC 429 / timeouts:** switch provider or raise tier; retry with backoff
+- **Not an archive node:** use an archive endpoint in `.env`
+- **Windows log encoding:** prefer UTF-8 when piping logs
 
-Assumptions, oracle model notes, funding model, and interpretation boundaries are documented in [docs/test-assumptions.md](docs/test-assumptions.md).
+---
 
-## Consulting Deliverable Command
+## Vault audit / consulting bundle (optional path)
 
-Use this single command to produce a client-ready package with reports, manifests, security artifacts, AI triage, and a zip file:
+This repo also supports a “client deliverable bundle” workflow (deterministic evidence bundles, reports, manifests):
 
+Example:
 ```bash
 npm run deliverable -- 0x489ee077994B6658eAfA855C308275EAd8097C4A --block 200000000 --rpc https://arb1.arbitrum.io/rpc --client RigoCrypto --engagement whitelist-review
 ```
 
-Optional labeling and packaging flags:
+See full details in the repo docs (and `docs/sales-launch-kit.md` if present).  
+**Note:** This is not a substitute for a full manual smart contract audit; AI output is advisory and must be human-reviewed.
 
-- `--client <name>`: prepends client label in default bundle directory name.
-- `--engagement <name>`: prepends engagement label in default bundle directory name.
-- `--zip`: writes a zip archive next to the bundle directory.
-- `--zip <path>`: writes zip to a custom path.
+---
 
-Mode and chain config flags:
+## Why this is different
+- Deterministic fork pinning (reproducible evidence)
+- Automatic proof packaging + report generation
+- Triage contract is versioned (`schema_version`)
+- Managed mode supports multi-client operation without putting paywalls in OSS
 
-- `--mode auto|v1|v2`: target mode selection (`auto` default).
-- `--chain-id <id>`: require/lock expected chain id from RPC.
-- `--require-archive`: fail fast if RPC cannot serve historical state for requested block.
-- `--recommend-archive-rpc` / `--no-recommend-archive-rpc`: control archive remediation hints when output is partial.
+---
 
-If no vault is passed, the tool will use `configs/chains/<chainId>.*.json` and default to `gmxV1.vault` when configured.
+## Contact / Getting a quote
+- Security disclosures: `SECURITY.md`
+- For managed service / retainer: open an issue tagged `managed-service` or add your email here.
 
-Chain config fields used for onboarding:
+---
 
-- `name`, `chainId`
-- `explorer.apiBase`
-- `gmxV1.vault`
-- `gmxV2.dataStore`, `gmxV2.reader`, `gmxV2.vault`/`gmxV2.vaults`
-- `chainlinkFeedsByToken`
-- `nativeWrappedToken`
-
-Example (config-driven default vault):
-
-```bash
-npm run deliverable -- --rpc https://arb1.arbitrum.io/rpc --block 200000000 --client RigoCrypto --engagement whitelist-review --mode auto --zip
-```
-
-## Docker Runtime
-
-1. Start stack:
-
-```bash
-docker compose up -d
-```
-
-1. Pull model once:
-
-```bash
-docker exec -it gmx-ollama ollama pull qwen2.5-coder:7b
-```
-
-1. Run an audit inside container:
-
-```bash
-docker exec -it -e GMX_VAULT_ADDRESS=0x489ee077994B6658eAfA855C308275EAd8097C4A gmx-vault-auditor npm run audit:ai -- --block 200000000 --rpc https://arb1.arbitrum.io/rpc
-```
-
-## Monetization-Ready Packaging
-
-- OSS CLI: free local usage.
-- Hosted API: paid tiers based on runs, private RPC, and support.
-- Enterprise: annual license with custom detectors and SLAs.
-
-## Commercial Positioning
-
-This repository can also be packaged as a client-facing GMX review service: pinned-block evidence bundles, market and collateral exposure analysis, oracle-risk flags, security appendices, and optional AI-assisted triage.
-
-Commercial launch copy, pricing, intake flow, and outreach templates live in [docs/sales-launch-kit.md](docs/sales-launch-kit.md).
-
-Scope note:
-
-- This tool is suitable for deterministic configuration, exposure, and oracle-health reviews.
-- It is not a substitute for a full manual smart contract audit.
-- AI output is advisory and must be human-reviewed.
-
-## Landing Page Snippet
-
-Use this copy for your marketing site:
-
-Title: Audit GMX Vaults In Minutes
-Subtitle: Deterministic on-chain snapshots, security findings, and AI triage in one bundle.
-CTA 1: Start Free CLI
-CTA 2: Get API Access
-Proof points:
-
-- Block-pinned reproducible outputs
-- Security + AI combined findings
-- CI gate JSON for automated policy checks
-
-## Minimal API Contract
-
-POST /api/audit
-Headers:
-
-- Authorization: Bearer API_KEY
-
-Body:
-
-```json
-{
-   "vault": "0x...",
-   "block": 200000000,
-   "rpc": "https://arb1.arbitrum.io/rpc",
-   "mode": "full"
-}
-```
-
-Response:
-
-```json
-{
-   "jobId": "audit_123",
-   "status": "queued",
-   "bundlePath": "outputs/bundles/...",
-   "reportHtml": "outputs/reports/...",
-   "gate": {
-      "passed": true,
-      "high": 0,
-      "medium": 1
-   }
-}
-```
-
-## Important Note About Vault Addresses
-
-Address strings can be mixed-case but not checksum-valid. The scripts normalize any valid 40-hex address input so copy-paste inputs are accepted.
-
-If a target contract is not a GMX v1 vault, the tool now returns a clear message indicating that v1 whitelist getters are missing.
+### Optional: Add a “Customer FAQ” section?
+If you want, I can add a short FAQ (e.g., “Can my team run it ourselves?”, “What access do you need?”, “Where are artifacts stored?”, “How do you handle NDA?”) and tailor the pricing copy to your exact offer.
