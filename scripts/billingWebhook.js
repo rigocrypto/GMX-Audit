@@ -278,6 +278,9 @@ function acquireLock() {
   }
   try {
     fs.writeFileSync(LOCK_PATH, `${process.pid}\n`, { flag: "wx" });
+    log("info", "worker.lock_acquired", {
+      lockPath: LOCK_PATH
+    });
     return true;
   } catch (_) {
     return false;

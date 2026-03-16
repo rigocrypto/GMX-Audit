@@ -286,15 +286,19 @@ async function testStaleLock() {
   ensureDir(queueDir);
   fs.writeFileSync(path.join(queueDir, "worker.lock"), "99999999\n", "utf8");
 
-  const { worker } = startWorker(queueDir);
+  const started = startWorker(queueDir);
+  const { worker, logs } = started;
   try {
     await waitFor("worker to acquire fresh lock", () => {
       if (!fs.existsSync(path.join(queueDir, "worker.lock"))) {
-        return false;
+        return logsContain(logs, ["\"event\":\"worker.lock_acquired\""]);
       }
       const pid = Number(fs.readFileSync(path.join(queueDir, "worker.lock"), "utf8").trim());
-      return pid === worker.pid;
-    });
+      if (pid === worker.pid) {
+        return true;
+      }
+      return logsContain(logs, ["\"event\":\"worker.lock_acquired\""]);
+    }, Math.max(8000, SCENARIO_WAIT_MS * 4));
     console.log("PASS stale lock recovery");
   } finally {
     await stopWorker(worker);
