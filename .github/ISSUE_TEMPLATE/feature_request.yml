@@ -1,0 +1,64 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for the bounty-rotation-harness
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please fill in as much detail as possible.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / Motivation
+      description: Is your feature request related to a problem? Describe the context and motivation.
+      placeholder: "I find it frustrating when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature or change you'd like to see.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area of the Project
+      description: Which part of the harness does this feature affect?
+      options:
+        - Fork scanning
+        - Economic-impact triage
+        - Immunefi report generator
+        - CI / GitHub Actions
+        - Security dashboard
+        - Documentation
+        - Other
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security
+    attributes:
+      label: Security Notice
+      options:
+        - label: I have NOT included any private keys, mnemonics, API keys, or secrets in this request.
+          required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other context, screenshots, or references that support the request.
