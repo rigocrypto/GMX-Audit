@@ -24,6 +24,7 @@ import type { Signer } from "ethers";
 import {
   ExploitDetector,
   FUZZ_CONFIG,
+  isArchiveStateUnavailableError,
   readAtForkBlock,
   requireArbitrumForkOrSkip,
   requireRealMutations,
@@ -169,6 +170,17 @@ describe("GMX exploit search: GLV accounting invariants [WETH-USDC GLV]", functi
     if (glvRouterCode === "0x" || glvVaultCode === "0x" || glvTokenCode === "0x") {
       console.log("[glvAccounting] GLV contracts not found at expected addresses — skipping");
       this.skip();
+    }
+
+    try {
+      await readAtForkBlock<bigint>(GLV_WETH_TOKEN, ERC20_ABI, "totalSupply");
+    } catch (error) {
+      if (isArchiveStateUnavailableError(error)) {
+        console.log("[glvAccounting] archive state unavailable for configured fork block — skipping GLV suite");
+        this.skip();
+        return;
+      }
+      throw error;
     }
   });
 

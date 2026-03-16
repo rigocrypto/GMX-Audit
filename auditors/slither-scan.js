@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { spawnSync } = require("child_process");
+const runSemgrepScan = require("./semgrep-scan");
 
 function countHighFromSlither(jsonPath) {
   if (!fs.existsSync(jsonPath)) {
@@ -33,16 +34,23 @@ module.exports = function runSlitherScan({ target, outputDir }) {
   );
 
   if (result.error) {
+    const semgrepResult = runSemgrepScan({ target, outputDir });
+    if (semgrepResult.status !== "skipped") {
+      return semgrepResult;
+    }
     return {
+      tool: "slither",
       status: "skipped",
       reason: "slither-not-installed",
-      highCount: 0
+      highCount: 0,
+      fallback: semgrepResult
     };
   }
 
   if (result.status !== 0) {
     fs.writeFileSync(stderrFile, `${result.stderr || ""}\n${result.stdout || ""}`);
     return {
+      tool: "slither",
       status: "error",
       reason: `slither-exit-${result.status}`,
       stderrFile,
@@ -50,7 +58,19 @@ module.exports = function runSlitherScan({ target, outputDir }) {
     };
   }
 
+  let version = "unknown";
+  try {
+    const versionResult = spawnSync("slither", ["--version"], { encoding: "utf8" });
+    if (versionResult.status === 0 && versionResult.stdout) {
+      version = versionResult.stdout.trim();
+    }
+  } catch (_) {
+    // Keep version as unknown if probing fails.
+  }
+
   return {
+    tool: "slither",
+    version,
     status: "ok",
     outputFile,
     highCount: countHighFromSlither(outputFile)

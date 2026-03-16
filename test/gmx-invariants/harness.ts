@@ -353,17 +353,28 @@ export function requireRealMutations(specName: string): void {
   }
 }
 
-export function getForkBlockNumber(): number {
+export function getForkBlockTag(): number | "latest" {
   const activeChain = getActiveChain();
   const raw =
     activeChain === "avalanche"
       ? process.env.AVALANCHE_FORK_BLOCK_NUMBER || process.env.AVALANCHE_FORK_BLOCK || process.env.FORK_BLOCK_NUMBER || process.env.FORK_BLOCK
       : process.env.FORK_BLOCK_NUMBER || process.env.FORK_BLOCK;
+  if (raw && raw.trim().toLowerCase() === "latest") {
+    return "latest";
+  }
   const parsed = raw ? Number(raw) : Number.NaN;
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new Error("Fork block env must be set to a positive integer for direct fork-block reads");
   }
   return parsed;
+}
+
+export function getForkBlockNumber(): number {
+  const blockTag = getForkBlockTag();
+  if (blockTag === "latest") {
+    throw new Error("Fork block number requested but FORK_BLOCK is set to latest");
+  }
+  return blockTag;
 }
 
 export function getDirectRpcProvider(): JsonRpcProvider {
@@ -394,7 +405,39 @@ export async function readAtForkBlock<T>(
   args: readonly unknown[] = []
 ): Promise<T> {
   const contract = new RpcContract(contractAddress, abi, getDirectRpcProvider()) as any;
-  return contract[fnName](...args, { blockTag: getForkBlockNumber() }) as Promise<T>;
+  return contract[fnName](...args, { blockTag: getForkBlockTag() }) as Promise<T>;
+}
+
+export function isArchiveStateUnavailableError(error: unknown): boolean {
+  const message = (
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : ""
+  ).toLowerCase();
+
+  if (
+    message.includes("missing trie node") ||
+    message.includes("state is not available") ||
+    message.includes("header not found") ||
+    message.includes("ancient block")
+  ) {
+    return true;
+  }
+
+  const nested = (error as any)?.error?.message || (error as any)?.info?.error?.message;
+  if (typeof nested === "string") {
+    const nestedMessage = nested.toLowerCase();
+    return (
+      nestedMessage.includes("missing trie node") ||
+      nestedMessage.includes("state is not available") ||
+      nestedMessage.includes("header not found") ||
+      nestedMessage.includes("ancient block")
+    );
+  }
+
+  return false;
 }
 
 export function biasedUsdAmount(seed: number, minUsd: bigint, maxUsd: bigint): bigint {
