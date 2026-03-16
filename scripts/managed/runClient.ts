@@ -95,6 +95,38 @@ function ensureDir(dirPath: string): void {
   fs.mkdirSync(dirPath, { recursive: true });
 }
 
+function validateClientEnv(
+  client: ReturnType<typeof getClientConfig>,
+  chains: string[]
+): { warnings: string[]; errors: string[] } {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+
+  const rpcMissing = chains.filter((chain) => {
+    const envName = resolveRpcEnvName(chain, client.env);
+    return !envName || !process.env[envName];
+  });
+
+  if (rpcMissing.length === chains.length) {
+    errors.push(
+      `No RPC env vars are set for any configured chain (${chains.join(", ")}). ` +
+        `Set e.g. ${(chains[0] ?? "CHAIN").toUpperCase()}_RPC_URL in your environment.`
+    );
+  } else if (rpcMissing.length > 0) {
+    warnings.push(`Missing RPC env for chains: ${rpcMissing.join(", ")} — those chains will be skipped.`);
+  }
+
+  if (client.alerts.slackWebhookEnv && !process.env[client.alerts.slackWebhookEnv]) {
+    warnings.push(`Slack webhook env "${client.alerts.slackWebhookEnv}" is not set — alerts will not be delivered.`);
+  }
+
+  if (client.auth.dashboardTokenEnv && !process.env[client.auth.dashboardTokenEnv]) {
+    warnings.push(`Dashboard token env "${client.auth.dashboardTokenEnv}" is not set — dashboard auth will reject all requests.`);
+  }
+
+  return { warnings, errors };
+}
+
 function resolveRpcEnvName(chain: string, envMap: Record<string, string>): string | undefined {
   const upperChain = chain.toUpperCase();
   const candidates = [
@@ -330,12 +362,28 @@ async function sendAlerts(summary: RunSummary, slackWebhookEnv?: string, emailTo
         }
         if (attempt < 2) await new Promise<void>((r) => setTimeout(r, 1000 * (attempt + 1)));
       }
-      fs.writeFileSync(
-        path.join(alertsDir, delivered ? "slack.json" : "slack-error.txt"),
-        JSON.stringify({ delivered, status: lastStatus }, null, 2),
-        "utf8"
-      );
-      if (!delivered) console.error("[alert] All Slack retries exhausted — alert NOT delivered");
+      if (delivered) {
+        fs.writeFileSync(
+          path.join(alertsDir, "slack.json"),
+          JSON.stringify({ delivered: true, status: lastStatus }, null, 2),
+          "utf8"
+        );
+      } else {
+        const deadLetter = {
+          timestamp: new Date().toISOString(),
+          clientId: summary.clientId,
+          runId: summary.runId,
+          webhookEnvName: slackWebhookEnv,
+          payload: { text: `${subject}\n${summary.artifacts.runDir}` },
+          attempts: 3
+        };
+        fs.writeFileSync(
+          path.join(alertsDir, "dead-letter.json"),
+          JSON.stringify(deadLetter, null, 2),
+          "utf8"
+        );
+        console.error("[alert] All Slack retries exhausted — alert written to dead-letter queue");
+      }
     }
   }
 
@@ -369,6 +417,13 @@ function pruneOldRuns(clientDir: string, keepDays: number): void {
 export async function executeClientRun(args: CliArgs): Promise<RunSummary> {
   const client = getClientConfig(args.clientId);
   const chains = args.chainsOverride && args.chainsOverride.length > 0 ? args.chainsOverride : client.chains;
+
+  const { warnings: envWarnings, errors: envErrors } = validateClientEnv(client, chains);
+  for (const w of envWarnings) console.warn(`[validate] ${w}`);
+  if (envErrors.length > 0) {
+    throw new Error(`[validate] Env validation failed:\n${envErrors.join("\n")}`);
+  }
+
   const timestamp = new Date().toISOString();
   const runId = toRunId();
   const runDir = path.join(process.cwd(), "outputs", "managed", client.id, toIsoDate(), runId);

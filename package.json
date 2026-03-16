@@ -21,6 +21,8 @@
     "managed:run": "ts-node scripts/managed/runClient.ts",
     "managed:scheduler": "ts-node scripts/managed/scheduler.ts",
     "managed:serve": "ts-node scripts/managed/serveDashboards.ts",
+    "managed:health": "ts-node scripts/managed/health.ts",
+    "managed:retry-alerts": "ts-node scripts/managed/retryAlerts.ts",
     "generate-immunefi": "ts-node scripts/generateImmunefiReport.ts",
     "triage": "ts-node scripts/triage.ts",
     "triage:ci": "ts-node scripts/triage.ts --dir exploit-proofs --out outputs/triage/triage-result.json",
