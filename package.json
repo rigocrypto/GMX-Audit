@@ -67,13 +67,13 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.1.2",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "@types/better-sqlite3": "^7.6.11",
     "@types/express": "^5.0.6",
     "@types/node": "^22.10.2",
     "cross-env": "^10.1.0",
     "fast-check": "^3.23.2",
-    "hardhat": "^2.26.3",
+    "hardhat": "^3.1.12",
     "playwright": "^1.54.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
@@ -90,7 +90,7 @@
     "express": "^4.21.2",
     "glob": "^10.4.5",
     "node-cron": "^4.2.1",
-    "nodemailer": "^6.10.1",
+    "nodemailer": "^7.0.11",
     "stripe": "^18.2.1"
   },
   "type": "commonjs"
