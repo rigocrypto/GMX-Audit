@@ -74,6 +74,8 @@ jobs:
         run: npm ci
 
       - name: Compile contracts
+        env:
+          HARDHAT_DISABLE_FORKING: "1"
         run: npx hardhat compile
 
       - name: Cache deps and artifacts
