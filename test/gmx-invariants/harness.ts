@@ -38,6 +38,7 @@ const VAULT_POOL_ABI = [
 const DATASTORE_LIFECYCLE_ABI = [
   "function getBytes32Count(bytes32 key) view returns (uint256)",
   "function getBytes32ValuesAt(bytes32 key, uint256 start, uint256 end) view returns (bytes32[])",
+  "function containsBytes32(bytes32 setKey, bytes32 value) view returns (bool)",
   "function getBytes32(bytes32 key) view returns (bytes32)",
   "function getUint(bytes32 key) view returns (uint256)",
   "function getAddress(bytes32 key) view returns (address)"
@@ -51,6 +52,7 @@ const LIFECYCLE_ROUTER_ABI = [
   "function cancelOrder(bytes32 key)",
   "function cancelDeposit(bytes32 key)",
   "function cancelWithdrawal(bytes32 key)",
+  "function createShift(((address receiver, address callbackContract, address uiFeeReceiver, address fromMarket, address toMarket) addresses, uint256 minMarketTokens, uint256 executionFee, uint256 callbackGasLimit, bytes32[] dataList) params) payable returns (bytes32)",
   "function createDeposit(((address receiver, address callbackContract, address uiFeeReceiver, address market, address initialLongToken, address initialShortToken, address[] longTokenSwapPath, address[] shortTokenSwapPath) addresses, uint256 minMarketTokens, bool shouldUnwrapNativeToken, uint256 executionFee, uint256 callbackGasLimit, bytes32[] dataList) params) payable returns (bytes32)",
   "function createWithdrawal(((address receiver, address callbackContract, address uiFeeReceiver, address market, address[] longTokenSwapPath, address[] shortTokenSwapPath) addresses, uint256 minLongTokenAmount, uint256 minShortTokenAmount, bool shouldUnwrapNativeToken, uint256 executionFee, uint256 callbackGasLimit, bytes32[] dataList) params) payable returns (bytes32)"
 ];
@@ -65,6 +67,10 @@ const WITHDRAWAL_HANDLER_EXECUTE_ABI = [
 
 const DEPOSIT_HANDLER_EXECUTE_ABI = [
   "function executeDeposit(bytes32 key, (address[] tokens, address[] providers, bytes[] data) oracleParams) external"
+];
+
+const SHIFT_HANDLER_EXECUTE_ABI = [
+  "function executeShift(bytes32 key, (address[] tokens, address[] providers, bytes[] data) oracleParams) external"
 ];
 
 const ROLE_STORE_QUERY_ABI = [
@@ -130,6 +136,46 @@ export type PositionSnapshot = {
   averagePrice: bigint;
   reserveAmount: bigint;
 };
+
+  export type V2PositionSnapshot = {
+    key: string;
+    sizeInUsd: bigint;
+    collateralAmount: bigint;
+    isOpen: boolean;
+  };
+
+  export type V2PositionFeeSnapshot = {
+    fundingFeeAmount: bigint;
+    fundingFeeUsd: bigint;
+    claimableLongTokenAmount: bigint;
+    claimableLongTokenUsd: bigint;
+    claimableShortTokenAmount: bigint;
+    claimableShortTokenUsd: bigint;
+    signedFundingUsd: bigint;
+    borrowingFeeUsd: bigint;
+  };
+
+  export interface ConservationSnapshot {
+    attackerLong: bigint;
+    attackerShort: bigint;
+    attackerGM: bigint;
+    poolLong: bigint;
+    poolShort: bigint;
+    swapImpactPoolLong: bigint;
+    swapImpactPoolShort: bigint;
+    claimableFeeLong: bigint;
+    claimableFeeShort: bigint;
+    claimableUiFeeLong: bigint;
+    claimableUiFeeShort: bigint;
+    gmTotalSupply: bigint;
+    blockNumber: number;
+  }
+
+  export interface ShiftConservationSnapshot {
+    from: ConservationSnapshot;
+    to: ConservationSnapshot;
+    blockNumber: number;
+  }
 
 export interface ActionAdapter {
   deposit(ctx: GMXInvariantContext, input: ActionInput): Promise<void>;
@@ -490,6 +536,15 @@ export async function withIterationSnapshot<T>(run: () => Promise<T>): Promise<T
   }
 }
 
+export async function withEvmSnapshot<T>(run: () => Promise<T>): Promise<T> {
+  const snapshotId = await network.provider.send("evm_snapshot", []);
+  try {
+    return await run();
+  } finally {
+    await network.provider.send("evm_revert", [snapshotId]);
+  }
+}
+
 function toTokenUnits(amountUsd: bigint, decimals: number, usdPerToken: bigint): bigint {
   const scale = 10n ** BigInt(decimals);
   if (usdPerToken <= 0n) {
@@ -532,14 +587,61 @@ const DEFAULT_ORDER_VAULT =
   readDeploymentAddress("OrderVault.json") ||
   process.env.GMX_ORDER_VAULT_ADDRESS ||
   "0x0000000000000000000000000000000000000000";
+const DEFAULT_SHIFT_VAULT =
+  readDeploymentAddress("ShiftVault.json") ||
+  process.env.GMX_SHIFT_VAULT_ADDRESS ||
+  "0x0000000000000000000000000000000000000000";
 const DEFAULT_DATA_STORE =
   readDeploymentAddress("DataStore.json") ||
   process.env.GMX_DATA_STORE_ADDRESS ||
   "0x0000000000000000000000000000000000000000";
+
+export function getDefaultDataStoreAddress(): string {
+  return DEFAULT_DATA_STORE;
+}
+
+export function getDefaultShiftVaultAddress(): string {
+  return DEFAULT_SHIFT_VAULT;
+}
+
+export function getLifecycleAddresses(): {
+  router: string;
+  exchangeRouter: string;
+  orderVault: string;
+  depositVault: string;
+  withdrawalVault: string;
+  shiftVault: string;
+  shiftHandler: string;
+} {
+  return {
+    router: DEFAULT_ROUTER,
+    exchangeRouter: DEFAULT_EXCHANGE_ROUTER,
+    orderVault: DEFAULT_ORDER_VAULT,
+    depositVault: DEFAULT_DEPOSIT_VAULT,
+    withdrawalVault: DEFAULT_WITHDRAWAL_VAULT,
+    shiftVault: DEFAULT_SHIFT_VAULT,
+    shiftHandler: DEFAULT_SHIFT_HANDLER,
+  };
+}
+
 const ORDER_LIST_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["ORDER_LIST"]));
 const DEPOSIT_LIST_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["DEPOSIT_LIST"]));
 const WITHDRAWAL_LIST_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["WITHDRAWAL_LIST"]));
+const SHIFT_LIST_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["SHIFT_LIST"]));
 const IS_ADL_ENABLED_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["IS_ADL_ENABLED"]));
+const POSITION_LIST_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["POSITION_LIST"]));
+const SIZE_IN_USD_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["SIZE_IN_USD"]));
+const COLLATERAL_AMOUNT_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["COLLATERAL_AMOUNT"]));
+const POOL_AMOUNT_KEY = ethers.keccak256(ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["POOL_AMOUNT"]));
+const SWAP_IMPACT_POOL_AMOUNT_KEY = ethers.keccak256(
+  ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["SWAP_IMPACT_POOL_AMOUNT"])
+);
+const CLAIMABLE_FEE_AMOUNT_KEY = ethers.keccak256(
+  ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["CLAIMABLE_FEE_AMOUNT"])
+);
+const CLAIMABLE_UI_FEE_AMOUNT_KEY = ethers.keccak256(
+  ethers.AbiCoder.defaultAbiCoder().encode(["string"], ["CLAIMABLE_UI_FEE_AMOUNT"])
+);
 
 const DEFAULT_WITHDRAWAL_VAULT =
   readDeploymentAddress("WithdrawalVault.json") ||
@@ -556,6 +658,10 @@ const DEFAULT_WITHDRAWAL_HANDLER =
 const DEFAULT_DEPOSIT_HANDLER =
   readDeploymentAddress("DepositHandler.json") ||
   process.env.GMX_DEPOSIT_HANDLER_ADDRESS ||
+  "0x0000000000000000000000000000000000000000";
+const DEFAULT_SHIFT_HANDLER =
+  readDeploymentAddress("ShiftHandler.json") ||
+  process.env.GMX_SHIFT_HANDLER_ADDRESS ||
   "0x0000000000000000000000000000000000000000";
 const DEFAULT_ROLE_STORE =
   readDeploymentAddress("RoleStore.json") ||
@@ -1477,6 +1583,92 @@ export async function getTotalAssets(ctx: GMXInvariantContext): Promise<bigint> 
   return state.tokens.reduce((acc, token) => acc + token.poolAmount, 0n);
 }
 
+  export async function getV2PositionSnapshot(
+    account: string,
+    market: string,
+    collateralToken: string,
+    isLong: boolean
+  ): Promise<V2PositionSnapshot> {
+    const dataStore = await ethers.getContractAt(DATASTORE_LIFECYCLE_ABI, DEFAULT_DATA_STORE);
+  
+    // Validate inputs
+    if (!account || !market || !collateralToken) {
+      throw new Error(`Invalid position snapshot params: account=${account}, market=${market}, collateralToken=${collateralToken}`);
+    }
+  
+    const positionKey = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(["address", "address", "address", "bool"], [account, market, collateralToken, isLong])
+    );
+
+    const isOpen = Boolean(await (dataStore as any).containsBytes32(POSITION_LIST_KEY, positionKey));
+    if (!isOpen) {
+      return {
+        key: positionKey,
+        sizeInUsd: 0n,
+        collateralAmount: 0n,
+        isOpen: false
+      };
+    }
+
+    const sizeInUsdKey = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(["bytes32", "bytes32"], [positionKey, SIZE_IN_USD_KEY])
+    );
+    const collateralAmountStorageKey = ethers.keccak256(
+      ethers.AbiCoder.defaultAbiCoder().encode(["bytes32", "bytes32"], [positionKey, COLLATERAL_AMOUNT_KEY])
+    );
+
+    return {
+      key: positionKey,
+      sizeInUsd: BigInt((await (dataStore as any).getUint(sizeInUsdKey)).toString()),
+      collateralAmount: BigInt((await (dataStore as any).getUint(collateralAmountStorageKey)).toString()),
+      isOpen: true
+    };
+  }
+
+  export async function getV2PositionFeeSnapshot(params: {
+    account: string;
+    market: string;
+    collateralToken: string;
+    isLong: boolean;
+    longToken: string;
+    shortToken: string;
+  }): Promise<V2PositionFeeSnapshot> {
+    const dataStore = await ethers.getContractAt(DATASTORE_LIFECYCLE_ABI, DEFAULT_DATA_STORE);
+
+    const position = await getV2PositionSnapshot(
+      params.account,
+      params.market,
+      params.collateralToken,
+      params.isLong
+    );
+
+    if (!position.isOpen || position.sizeInUsd === 0n) {
+      return {
+        fundingFeeAmount: 0n,
+        fundingFeeUsd: 0n,
+        claimableLongTokenAmount: 0n,
+        claimableLongTokenUsd: 0n,
+        claimableShortTokenAmount: 0n,
+        claimableShortTokenUsd: 0n,
+        signedFundingUsd: 0n,
+        borrowingFeeUsd: 0n
+      };
+    }
+
+    // Read fee data from storage (simplified version - returns zeros for now)
+    // This can be extended to read actual fee data from DataStore as needed
+    return {
+      fundingFeeAmount: 0n,
+      fundingFeeUsd: 0n,
+      claimableLongTokenAmount: 0n,
+      claimableLongTokenUsd: 0n,
+      claimableShortTokenAmount: 0n,
+      claimableShortTokenUsd: 0n,
+      signedFundingUsd: 0n,
+      borrowingFeeUsd: 0n
+    };
+  }
+
 function stringifyWithBigInt(value: unknown): string {
   return JSON.stringify(
     value,
@@ -1670,7 +1862,7 @@ async function getLastListItem(listKey: string): Promise<string | undefined> {
   return values[0];
 }
 
-async function resolveKeeper(roleName = "ORDER_KEEPER"): Promise<string> {
+export async function resolveKeeper(roleName = "ORDER_KEEPER"): Promise<string> {
   if (DEFAULT_KEEPER) return DEFAULT_KEEPER;
   if (DEFAULT_ROLE_STORE === "0x0000000000000000000000000000000000000000") {
     throw new Error("Set GMX_KEEPER_ADDRESS or GMX_ROLE_STORE_ADDRESS in .env");
@@ -1695,6 +1887,29 @@ export type CreateOrderParams = {
   isLong: boolean;
   executionFee?: bigint;
   collateralUsd?: bigint;
+  receiver?: string;
+  cancellationReceiver?: string;
+  callbackContract?: string;
+  callbackGasLimit?: bigint;
+  acceptablePrice?: bigint;
+  shouldUnwrapNativeToken?: boolean;
+  minOutputAmount?: bigint;
+  validFromTime?: bigint;
+};
+
+export type CreateDecreaseOrderParams = {
+  marketSet: MarketSet;
+  signer: any;
+  sizeDeltaUsd: bigint;
+  isLong: boolean;
+  executionFee?: bigint;
+  collateralToken?: string;
+  receiver?: string;
+  cancellationReceiver?: string;
+  acceptablePrice?: bigint;
+  minOutputAmount?: bigint;
+  validFromTime?: bigint;
+  shouldUnwrapNativeToken?: boolean;
 };
 
 export type CreateWithdrawalParams = {
@@ -1702,6 +1917,12 @@ export type CreateWithdrawalParams = {
   signer: any;
   marketTokenAmount: bigint;
   executionFee?: bigint;
+  receiver?: string;
+  callbackContract?: string;
+  uiFeeReceiver?: string;
+  longTokenSwapPath?: string[];
+  shortTokenSwapPath?: string[];
+  shouldUnwrapNativeToken?: boolean;
 };
 
 export type CreateDepositParams = {
@@ -1710,6 +1931,18 @@ export type CreateDepositParams = {
   longTokenAmount: bigint;
   shortTokenAmount?: bigint;
   executionFee?: bigint;
+  minMarketTokens?: bigint;
+};
+
+export type CreateShiftParams = {
+  signer: any;
+  fromMarket: string;
+  toMarket: string;
+  marketTokenAmount: bigint;
+  executionFee?: bigint;
+  receiver?: string;
+  callbackContract?: string;
+  uiFeeReceiver?: string;
   minMarketTokens?: bigint;
 };
 
@@ -1799,7 +2032,14 @@ async function getRealOraclePrice(dataStore: any, token: string): Promise<bigint
   return (absAnswer * multiplier) / 10n ** 30n;
 }
 
-async function getChainlinkProviderRefPrice(token: string): Promise<bigint> {
+export type ChainlinkProviderOraclePrice = {
+  min: bigint;
+  max: bigint;
+  timestamp: bigint;
+  provider: string;
+};
+
+export async function getChainlinkProviderOraclePrice(token: string): Promise<ChainlinkProviderOraclePrice> {
   if (DEFAULT_CHAINLINK_PRICE_FEED_PROVIDER === ethers.ZeroAddress) {
     throw new Error("Missing chainlink price feed provider address");
   }
@@ -1811,9 +2051,12 @@ async function getChainlinkProviderRefPrice(token: string): Promise<bigint> {
 
   try {
     const price = await (provider as any).getOraclePrice(token, "0x");
-    const min = BigInt((price.min ?? price[1]).toString());
-    const max = BigInt((price.max ?? price[2]).toString());
-    return (min + max) / 2n;
+    return {
+      min: BigInt((price.min ?? price[1]).toString()),
+      max: BigInt((price.max ?? price[2]).toString()),
+      timestamp: BigInt((price.timestamp ?? price[3]).toString()),
+      provider: String(price.provider ?? price[4])
+    };
   } catch (error) {
     if (!isHistoricalHardforkLookupError(error)) {
       throw error;
@@ -1825,10 +2068,146 @@ async function getChainlinkProviderRefPrice(token: string): Promise<bigint> {
       "getOraclePrice",
       [token, "0x"]
     );
-    const min = BigInt((price.min ?? price[1]).toString());
-    const max = BigInt((price.max ?? price[2]).toString());
-    return (min + max) / 2n;
+    return {
+      min: BigInt((price.min ?? price[1]).toString()),
+      max: BigInt((price.max ?? price[2]).toString()),
+      timestamp: BigInt((price.timestamp ?? price[3]).toString()),
+      provider: String(price.provider ?? price[4])
+    };
   }
+}
+
+export async function getChainlinkProviderRefPrice(token: string): Promise<bigint> {
+  const price = await getChainlinkProviderOraclePrice(token);
+  return (price.min + price.max) / 2n;
+}
+
+/**
+ * Returns the USD value (in 10^30 precision) for a given token amount.
+ * price from getChainlinkProviderRefPrice is in GMX oracle scale:
+ *   price = usd × 10^(30 − tokenDecimals)
+ * So: usdValue = amount × price / 10^tokenDecimals × 10^tokenDecimals / 10^30  = amount × price
+ * Wait — actually price × amount already has units of 10^30 for a whole token because:
+ *   price = (USD per token) × 10^(30 − decimals)
+ *   usd30 = amount_raw × price = amount_raw × (USD per token) × 10^(30 − decimals)
+ *         = (amount_raw / 10^decimals) × USD × 10^30 = tokenCount × USD × 10^30  ✓
+ */
+export async function getTokenMarketValue(tokenAddress: string, amount: bigint): Promise<bigint> {
+  if (amount === 0n) return 0n;
+  const price = await getChainlinkProviderRefPrice(tokenAddress);
+  return amount * price;
+}
+
+function deriveMarketTokenAddressKey(baseKey: string, marketToken: string, token: string): string {
+  return ethers.keccak256(
+    ethers.AbiCoder.defaultAbiCoder().encode(["bytes32", "address", "address"], [baseKey, marketToken, token])
+  );
+}
+
+export async function snapshotConservation(
+  dataStore: Contract,
+  marketToken: string,
+  longToken: string,
+  shortToken: string,
+  attacker: string
+): Promise<ConservationSnapshot> {
+  const gmContract = await ethers.getContractAt(ERC20_ABI, marketToken);
+  const longContract = await ethers.getContractAt(ERC20_ABI, longToken);
+  const shortContract = await ethers.getContractAt(ERC20_ABI, shortToken);
+
+  const poolLongKey = deriveMarketTokenAddressKey(POOL_AMOUNT_KEY, marketToken, longToken);
+  const poolShortKey = deriveMarketTokenAddressKey(POOL_AMOUNT_KEY, marketToken, shortToken);
+  const swapImpactLongKey = deriveMarketTokenAddressKey(SWAP_IMPACT_POOL_AMOUNT_KEY, marketToken, longToken);
+  const swapImpactShortKey = deriveMarketTokenAddressKey(SWAP_IMPACT_POOL_AMOUNT_KEY, marketToken, shortToken);
+  const claimableFeeLongKey = deriveMarketTokenAddressKey(CLAIMABLE_FEE_AMOUNT_KEY, marketToken, longToken);
+  const claimableFeeShortKey = deriveMarketTokenAddressKey(CLAIMABLE_FEE_AMOUNT_KEY, marketToken, shortToken);
+  const claimableUiFeeLongKey = deriveMarketTokenAddressKey(CLAIMABLE_UI_FEE_AMOUNT_KEY, marketToken, longToken);
+  const claimableUiFeeShortKey = deriveMarketTokenAddressKey(CLAIMABLE_UI_FEE_AMOUNT_KEY, marketToken, shortToken);
+
+  return {
+    attackerLong: BigInt((await (longContract as any).balanceOf(attacker)).toString()),
+    attackerShort: BigInt((await (shortContract as any).balanceOf(attacker)).toString()),
+    attackerGM: BigInt((await (gmContract as any).balanceOf(attacker)).toString()),
+    poolLong: BigInt((await (dataStore as any).getUint(poolLongKey)).toString()),
+    poolShort: BigInt((await (dataStore as any).getUint(poolShortKey)).toString()),
+    swapImpactPoolLong: BigInt((await (dataStore as any).getUint(swapImpactLongKey)).toString()),
+    swapImpactPoolShort: BigInt((await (dataStore as any).getUint(swapImpactShortKey)).toString()),
+    claimableFeeLong: BigInt((await (dataStore as any).getUint(claimableFeeLongKey)).toString()),
+    claimableFeeShort: BigInt((await (dataStore as any).getUint(claimableFeeShortKey)).toString()),
+    claimableUiFeeLong: BigInt((await (dataStore as any).getUint(claimableUiFeeLongKey)).toString()),
+    claimableUiFeeShort: BigInt((await (dataStore as any).getUint(claimableUiFeeShortKey)).toString()),
+    gmTotalSupply: BigInt((await (gmContract as any).totalSupply()).toString()),
+    blockNumber: await ethers.provider.getBlockNumber()
+  };
+}
+
+export async function snapshotShiftConservation(
+  dataStore: Contract,
+  fromMarketSet: MarketSet,
+  toMarketSet: MarketSet,
+  attacker: string
+): Promise<ShiftConservationSnapshot> {
+  const from = await snapshotConservation(
+    dataStore,
+    fromMarketSet.market,
+    fromMarketSet.longToken,
+    fromMarketSet.shortToken,
+    attacker
+  );
+  const to = await snapshotConservation(
+    dataStore,
+    toMarketSet.market,
+    toMarketSet.longToken,
+    toMarketSet.shortToken,
+    attacker
+  );
+
+  return {
+    from,
+    to,
+    blockNumber: await ethers.provider.getBlockNumber(),
+  };
+}
+
+export function reconcileConservation(
+  before: ConservationSnapshot,
+  after: ConservationSnapshot
+): { residualLong: bigint; residualShort: bigint } {
+  const residualLong =
+    (after.attackerLong - before.attackerLong) +
+    (after.poolLong - before.poolLong) +
+    (after.swapImpactPoolLong - before.swapImpactPoolLong) +
+    (after.claimableFeeLong - before.claimableFeeLong) +
+    (after.claimableUiFeeLong - before.claimableUiFeeLong);
+
+  const residualShort =
+    (after.attackerShort - before.attackerShort) +
+    (after.poolShort - before.poolShort) +
+    (after.swapImpactPoolShort - before.swapImpactPoolShort) +
+    (after.claimableFeeShort - before.claimableFeeShort) +
+    (after.claimableUiFeeShort - before.claimableUiFeeShort);
+
+  return { residualLong, residualShort };
+}
+
+export function reconcileShiftConservation(
+  before: ShiftConservationSnapshot,
+  after: ShiftConservationSnapshot
+): {
+  residualFromLong: bigint;
+  residualFromShort: bigint;
+  residualToLong: bigint;
+  residualToShort: bigint;
+} {
+  const from = reconcileConservation(before.from, after.from);
+  const to = reconcileConservation(before.to, after.to);
+
+  return {
+    residualFromLong: from.residualLong,
+    residualFromShort: from.residualShort,
+    residualToLong: to.residualLong,
+    residualToShort: to.residualShort,
+  };
 }
 
 /**
@@ -2048,6 +2427,15 @@ export async function createOrderForTest(
   const collateralAmount =
     (collateralUsd * 10n ** BigInt(marketSet.collateralDecimals)) / marketSet.collateralUsdPerToken;
 
+  const receiver = params.receiver ?? signerAddress;
+  const cancellationReceiver = params.cancellationReceiver ?? receiver;
+  const callbackContract = params.callbackContract ?? ethers.ZeroAddress;
+  const callbackGasLimit = params.callbackGasLimit ?? 0n;
+  const acceptablePrice = params.acceptablePrice ?? (isLong ? ethers.MaxUint256 : 0n);
+  const shouldUnwrapNativeToken = params.shouldUnwrapNativeToken ?? false;
+  const minOutputAmount = params.minOutputAmount ?? 0n;
+  const validFromTime = params.validFromTime ?? 0n;
+
   const token = await ethers.getContractAt(ERC20_ABI, tokenAddress);
   await (token.connect(signer) as any).approve(DEFAULT_ROUTER, collateralAmount);
 
@@ -2056,9 +2444,9 @@ export async function createOrderForTest(
   const router = await ethers.getContractAt("IExchangeRouter", DEFAULT_EXCHANGE_ROUTER);
   const orderParams = {
     addresses: {
-      receiver: signerAddress,
-      cancellationReceiver: signerAddress,
-      callbackContract: ethers.ZeroAddress,
+      receiver,
+      cancellationReceiver,
+      callbackContract,
       uiFeeReceiver: ethers.ZeroAddress,
       market: marketSet.market,
       initialCollateralToken: tokenAddress,
@@ -2068,16 +2456,16 @@ export async function createOrderForTest(
       sizeDeltaUsd,
       initialCollateralDeltaAmount: collateralAmount,
       triggerPrice: 0n,
-      acceptablePrice: isLong ? ethers.MaxUint256 : 0n,
+      acceptablePrice,
       executionFee,
-      callbackGasLimit: 0n,
-      minOutputAmount: 0n,
-      validFromTime: 0n
+      callbackGasLimit,
+      minOutputAmount,
+      validFromTime
     },
     orderType: 2, // MarketIncrease
     decreasePositionSwapType: 0,
     isLong,
-    shouldUnwrapNativeToken: false,
+    shouldUnwrapNativeToken,
     autoCancel: false,
     referralCode: ethers.ZeroHash,
     dataList: []
@@ -2153,6 +2541,110 @@ export async function createOrderForTest(
       );
     }
   }
+  return { key, receipt };
+}
+
+/**
+ * Create a MarketDecrease order via ExchangeRouter.multicall.
+ * This helper assumes an existing position and only sends execution fee + createOrder.
+ */
+export async function createDecreaseOrderForTest(
+  params: CreateDecreaseOrderParams
+): Promise<{ key: string; receipt: any }> {
+  const { marketSet, signer, sizeDeltaUsd, isLong } = params;
+  const requestedExecutionFee = params.executionFee ?? BigInt(DEFAULT_EXECUTION_FEE);
+  const executionFee = normalizeExecutionFee(requestedExecutionFee);
+  if (executionFee <= 0n) {
+    throw new Error("createDecreaseOrderForTest requires a non-zero executionFee");
+  }
+
+  const signerAddress = await signer.getAddress();
+  const collateralToken = params.collateralToken ?? marketSet.collateralToken;
+  const receiver = params.receiver ?? signerAddress;
+  const cancellationReceiver = params.cancellationReceiver ?? receiver;
+  const acceptablePrice = params.acceptablePrice ?? 0n;
+  const minOutputAmount = params.minOutputAmount ?? 0n;
+  const validFromTime = params.validFromTime ?? 0n;
+  const shouldUnwrapNativeToken = params.shouldUnwrapNativeToken ?? false;
+
+  const orderCountBefore = await getListCount(ORDER_LIST_KEY);
+  const router = await ethers.getContractAt("IExchangeRouter", DEFAULT_EXCHANGE_ROUTER);
+  const orderParams = {
+    addresses: {
+      receiver,
+      cancellationReceiver,
+      callbackContract: ethers.ZeroAddress,
+      uiFeeReceiver: ethers.ZeroAddress,
+      market: marketSet.market,
+      initialCollateralToken: collateralToken,
+      swapPath: []
+    },
+    numbers: {
+      sizeDeltaUsd,
+      initialCollateralDeltaAmount: 0n,
+      triggerPrice: 0n,
+      acceptablePrice,
+      executionFee,
+      callbackGasLimit: 0n,
+      minOutputAmount,
+      validFromTime
+    },
+    orderType: 5, // MarketDecrease
+    decreasePositionSwapType: 0,
+    isLong,
+    shouldUnwrapNativeToken,
+    autoCancel: false,
+    referralCode: ethers.ZeroHash,
+    dataList: []
+  };
+
+  let receipt: any | undefined;
+  if (getActiveChain() === "avalanche") {
+    try {
+      const directTx = await (router.connect(signer) as any).createOrder(orderParams, {
+        value: executionFee,
+        gasLimit: 4_000_000
+      });
+      const directReceipt = await directTx.wait();
+      if ((directReceipt.logs?.length ?? 0) > 0) {
+        receipt = directReceipt;
+      }
+    } catch {
+      // Fall back to multicall path below.
+    }
+  }
+
+  if (!receipt) {
+    const iface = router.interface;
+    const sendWntData = iface.encodeFunctionData("sendWnt", [DEFAULT_ORDER_VAULT, executionFee]);
+    const createOrderData = iface.encodeFunctionData("createOrder", [orderParams]);
+
+    const tx = await (router.connect(signer) as any).multicall(
+      [sendWntData, createOrderData],
+      { value: executionFee, gasLimit: 4_000_000 }
+    );
+    receipt = await tx.wait();
+  }
+
+  let key: string;
+  try {
+    key = getEventKey(receipt, "OrderCreated");
+  } catch {
+    const orderCountAfter = await getListCount(ORDER_LIST_KEY);
+    if (orderCountAfter > orderCountBefore) {
+      const recovered = await getLastListItem(ORDER_LIST_KEY);
+      if (recovered) {
+        key = recovered;
+      } else {
+        throw new Error("OrderCreated event missing and ORDER_LIST latest key could not be recovered");
+      }
+    } else {
+      throw new Error(
+        `OrderCreated event missing and ORDER_LIST did not grow (before=${orderCountBefore.toString()}, after=${orderCountAfter.toString()})`
+      );
+    }
+  }
+
   return { key, receipt };
 }
 
@@ -2351,6 +2843,12 @@ export async function createWithdrawalForTest(
     throw new Error("createWithdrawalForTest requires a non-zero executionFee");
   }
   const signerAddress = await signer.getAddress();
+  const receiver = params.receiver ?? signerAddress;
+  const callbackContract = params.callbackContract ?? ethers.ZeroAddress;
+  const uiFeeReceiver = params.uiFeeReceiver ?? ethers.ZeroAddress;
+  const longTokenSwapPath = params.longTokenSwapPath ?? [];
+  const shortTokenSwapPath = params.shortTokenSwapPath ?? [];
+  const shouldUnwrapNativeToken = params.shouldUnwrapNativeToken ?? false;
 
   const marketToken = await ethers.getContractAt(ERC20_ABI, marketSet.market);
   await (marketToken.connect(signer) as any).approve(DEFAULT_ROUTER, marketTokenAmount);
@@ -2359,16 +2857,16 @@ export async function createWithdrawalForTest(
   const withdrawalCountBefore = await getListCount(WITHDRAWAL_LIST_KEY);
   const withdrawalParams = {
     addresses: {
-      receiver: signerAddress,
-      callbackContract: ethers.ZeroAddress,
-      uiFeeReceiver: ethers.ZeroAddress,
+      receiver,
+      callbackContract,
+      uiFeeReceiver,
       market: marketSet.market,
-      longTokenSwapPath: [],
-      shortTokenSwapPath: []
+      longTokenSwapPath,
+      shortTokenSwapPath
     },
     minLongTokenAmount: 0n,
     minShortTokenAmount: 0n,
-    shouldUnwrapNativeToken: false,
+    shouldUnwrapNativeToken,
     executionFee,
     callbackGasLimit: 0n,
     dataList: []
@@ -2437,6 +2935,120 @@ export async function executeWithdrawalForTest(
     );
     const tx = await (handler.connect(keeper) as any).executeWithdrawal(key, oracleParams, {
       gasLimit: 8_000_000
+    });
+    return tx.wait();
+  } finally {
+    await network.provider.send("hardhat_stopImpersonatingAccount", [keeperAddress]);
+  }
+}
+
+// ── Shift lifecycle ────────────────────────────────────────────────────────
+/**
+ * Create a shift via ExchangeRouter.multicall.
+ * Caller must pre-fund signer with fromMarket GM tokens and ETH.
+ */
+export async function createShiftForTest(
+  params: CreateShiftParams
+): Promise<{ key: string; receipt: any }> {
+  const {
+    signer,
+    fromMarket,
+    toMarket,
+    marketTokenAmount,
+    minMarketTokens = 0n,
+    callbackContract = ethers.ZeroAddress,
+    uiFeeReceiver = ethers.ZeroAddress,
+  } = params;
+  const requestedExecutionFee = params.executionFee ?? BigInt(DEFAULT_EXECUTION_FEE);
+  const executionFee = normalizeExecutionFee(requestedExecutionFee);
+  if (executionFee <= 0n) {
+    throw new Error("createShiftForTest requires a non-zero executionFee");
+  }
+  if (DEFAULT_SHIFT_VAULT === "0x0000000000000000000000000000000000000000") {
+    throw new Error("GMX_SHIFT_VAULT_ADDRESS is required for createShiftForTest");
+  }
+
+  const signerAddress = await signer.getAddress();
+  const receiver = params.receiver ?? signerAddress;
+
+  const fromMarketToken = await ethers.getContractAt(ERC20_ABI, fromMarket);
+  await (fromMarketToken.connect(signer) as any).approve(DEFAULT_ROUTER, marketTokenAmount);
+
+  const router = await ethers.getContractAt(LIFECYCLE_ROUTER_ABI, DEFAULT_EXCHANGE_ROUTER);
+  const shiftCountBefore = await getListCount(SHIFT_LIST_KEY);
+  const shiftParams = {
+    addresses: {
+      receiver,
+      callbackContract,
+      uiFeeReceiver,
+      fromMarket,
+      toMarket,
+    },
+    minMarketTokens,
+    executionFee,
+    callbackGasLimit: 0n,
+    dataList: [],
+  };
+
+  const iface = router.interface;
+  const sendWntData = iface.encodeFunctionData("sendWnt", [DEFAULT_SHIFT_VAULT, executionFee]);
+  const sendTokensData = iface.encodeFunctionData("sendTokens", [
+    fromMarket,
+    DEFAULT_SHIFT_VAULT,
+    marketTokenAmount,
+  ]);
+  const createShiftData = iface.encodeFunctionData("createShift", [shiftParams]);
+
+  const tx = await (router.connect(signer) as any).multicall(
+    [sendWntData, sendTokensData, createShiftData],
+    { value: executionFee, gasLimit: 5_000_000 }
+  );
+  const receipt = await tx.wait();
+
+  let key: string;
+  try {
+    key = getEventKey(receipt, "ShiftCreated");
+  } catch {
+    const shiftCountAfter = await getListCount(SHIFT_LIST_KEY);
+    if (shiftCountAfter > shiftCountBefore) {
+      const recovered = await getLastListItem(SHIFT_LIST_KEY);
+      if (recovered) {
+        key = recovered;
+      } else {
+        throw new Error("ShiftCreated event missing and SHIFT_LIST latest key could not be recovered");
+      }
+    } else {
+      throw new Error(
+        `ShiftCreated event missing and SHIFT_LIST did not grow (before=${shiftCountBefore.toString()}, after=${shiftCountAfter.toString()})`
+      );
+    }
+  }
+
+  return { key, receipt };
+}
+
+export async function executeShiftForTest(
+  key: string,
+  oracleParams: OracleParams
+): Promise<any> {
+  if (DEFAULT_SHIFT_HANDLER === "0x0000000000000000000000000000000000000000") {
+    throw new Error("GMX_SHIFT_HANDLER_ADDRESS is required for executeShiftForTest");
+  }
+
+  let keeperAddress: string;
+  try {
+    keeperAddress = await resolveKeeper("SHIFT_KEEPER");
+  } catch {
+    keeperAddress = await resolveKeeper("ORDER_KEEPER");
+  }
+
+  await network.provider.send("hardhat_impersonateAccount", [keeperAddress]);
+  await network.provider.send("hardhat_setBalance", [keeperAddress, "0x56BC75E2D63100000"]);
+  try {
+    const keeper = await ethers.getSigner(keeperAddress);
+    const handler = await ethers.getContractAt(SHIFT_HANDLER_EXECUTE_ABI, DEFAULT_SHIFT_HANDLER);
+    const tx = await (handler.connect(keeper) as any).executeShift(key, oracleParams, {
+      gasLimit: 8_000_000,
     });
     return tx.wait();
   } finally {

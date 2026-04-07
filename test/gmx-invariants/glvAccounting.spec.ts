@@ -26,7 +26,6 @@ import {
   FUZZ_CONFIG,
   isArchiveStateUnavailableError,
   readAtForkBlock,
-  requireArbitrumForkOrSkip,
   requireRealMutations,
   withIterationSnapshot,
   type DetectorSnapshot
@@ -34,21 +33,31 @@ import {
 
 // ── addresses ───────────────────────────────────────────────────────────────
 
+const ACTIVE_CHAIN = (process.env.GMX_CHAIN || "arbitrum").toLowerCase();
+const IS_AVALANCHE = ACTIVE_CHAIN === "avalanche";
+
 const GLV_ROUTER_ADDRESS =
-  process.env.GMX_GLV_ROUTER_ADDRESS || "0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F";
+  process.env.GMX_GLV_ROUTER_ADDRESS ||
+  (IS_AVALANCHE ? "0x7E425c47b2Ff0bE67228c842B9C792D0BCe58ae6" : "0x7EAdEE2ca1b4D06a0d82fDF03D715550c26AA12F");
 const GLV_VAULT_ADDRESS =
-  process.env.GMX_GLV_VAULT_ADDRESS || "0x393053B58f9678C9c28c2cE941fF6cac49C3F8f9";
+  process.env.GMX_GLV_VAULT_ADDRESS ||
+  (IS_AVALANCHE ? "0x527FB0bCfF63C47761039bB386cFE181A92a4701" : "0x393053B58f9678C9c28c2cE941fF6cac49C3F8f9");
 /** GLV [WETH-USDC] ERC-20 market-token address */
 const GLV_WETH_TOKEN =
-  process.env.GMX_GLV_WETH_TOKEN || "0x528A5bac7E746C9A509A1f4F6dF58A03d44279F9";
-/** WETH-USDC GM market (first underlying market of the GLV vault) */
-const WETH_USDC_MARKET = "0x70d95587d40A2caf56bd97485aB3Eec10Bee6336";
-const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
-const WETH_ADDRESS = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1";
+  process.env.GMX_GLV_WETH_TOKEN ||
+  (IS_AVALANCHE ? "0x901Ee57F7118a7Be56Ac079cbCDa7F22663A3874" : "0x528A5bac7E746C9A509A1f4F6dF58A03d44279F9");
+/** Primary GLV underlying GM market for the configured chain. */
+const PRIMARY_GLV_MARKET =
+  process.env.GMX_GLV_PRIMARY_MARKET ||
+  (IS_AVALANCHE ? "0x913C1F46b48b3eD35E7dc3Cf754d4ae8499F31CF" : "0x70d95587d40A2caf56bd97485aB3Eec10Bee6336");
+const USDC_ADDRESS =
+  process.env.GMX_GLV_USDC_ADDRESS ||
+  (IS_AVALANCHE ? "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E" : "0xaf88d065e77c8cC2239327C5EDb3A432268e5831");
 
 /** A USDC whale that is liquid at the pinned fork block */
 const USDC_WHALE =
-  process.env.GMX_WHALE_ADDRESS || "0x489ee077994B6658eAfA855C308275EAd8097C4A";
+  process.env.GMX_WHALE_ADDRESS ||
+  (IS_AVALANCHE ? "0x9ab2De34A33fB459b538c43f251eB825645e8595" : "0x489ee077994B6658eAfA855C308275EAd8097C4A");
 
 const EXECUTION_FEE = BigInt(process.env.GMX_EXECUTION_FEE_WEI || "8000000000000000");
 const DEPOSIT_USDC = 100n * 10n ** 6n; // 100 USDC
@@ -113,7 +122,7 @@ function buildGlvDepositParams(receiver: string) {
   return {
     addresses: {
       glv: GLV_WETH_TOKEN,
-      market: WETH_USDC_MARKET,
+      market: PRIMARY_GLV_MARKET,
       receiver,
       callbackContract: ethers.ZeroAddress,
       uiFeeReceiver: ethers.ZeroAddress,
@@ -161,7 +170,6 @@ describe("GMX exploit search: GLV accounting invariants [WETH-USDC GLV]", functi
 
   before(async function () {
     requireRealMutations("glvAccounting");
-    await requireArbitrumForkOrSkip(() => this.skip());
 
     // Verify the key contracts are deployed at the expected addresses.
     const glvRouterCode = await ethers.provider.getCode(GLV_ROUTER_ADDRESS);

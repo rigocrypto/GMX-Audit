@@ -14,11 +14,11 @@ if (specFiles.length === 0) {
   process.exit(1);
 }
 
-const hardhatCli = require.resolve("hardhat/internal/cli/bootstrap");
+const npxCmd = process.platform === "win32" ? "npx.cmd" : "npx";
 const result = spawnSync(
-  process.execPath,
+  npxCmd,
   [
-    hardhatCli,
+    "hardhat",
     "test",
     ...specFiles,
     "--network",
@@ -27,6 +27,7 @@ const result = spawnSync(
   ],
   {
     stdio: "inherit",
+    shell: true,
     env: {
       ...process.env,
       GMX_ENABLE_REAL_MUTATIONS: process.env.GMX_ENABLE_REAL_MUTATIONS || "true"

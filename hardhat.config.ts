@@ -1,5 +1,8 @@
 import * as dotenv from "dotenv";
-import "@nomicfoundation/hardhat-toolbox";
+import "@nomicfoundation/hardhat-chai-matchers";
+import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-network-helpers";
+import "@nomicfoundation/hardhat-verify";
 import type { HardhatUserConfig } from "hardhat/config";
 
 dotenv.config();
