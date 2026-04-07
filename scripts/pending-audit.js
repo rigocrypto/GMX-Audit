@@ -5,6 +5,15 @@ const { spawnSync } = require("child_process");
 const root = process.cwd();
 const outputFile = path.join(root, "outputs", "pending-audit.md");
 
+function escapeMarkdownCell(value) {
+  return String(value)
+    .replace(/[\r\n\t]/g, " ")
+    .replace(/\|/g, "\\|")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .slice(0, 240);
+}
+
 function classify(title) {
   const lower = title.toLowerCase();
   if (lower.includes("glv")) return "known_infra_or_chain_scope";
@@ -67,7 +76,7 @@ function main() {
   ];
 
   for (const title of uniqueTitles) {
-    lines.push(`| ${title.replace(/\|/g, "\\|")} | ${classify(title)} |`);
+    lines.push(`| ${escapeMarkdownCell(title)} | ${escapeMarkdownCell(classify(title))} |`);
   }
 
   if (uniqueTitles.length === 0) {

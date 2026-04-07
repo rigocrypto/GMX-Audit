@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   billing-queue-tests-main:
     runs-on: ubuntu-latest

@@ -116,5 +116,12 @@
     "path-to-regexp": "^0.1.13",
     "stripe": "^18.2.1"
   },
+  "overrides": {
+    "axios": "^1.12.2",
+    "serialize-javascript": "^7.0.0",
+    "undici": "^6.24.0",
+    "tmp": "^0.2.4",
+    "cookie": "^0.7.2"
+  },
   "type": "commonjs"
 }

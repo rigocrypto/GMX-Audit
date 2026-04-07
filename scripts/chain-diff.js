@@ -6,6 +6,15 @@ const root = process.cwd();
 const deploymentsRoot = path.join(root, "gmx-synthetics", "deployments");
 const outputFile = path.join(root, "outputs", "chain_diff.md");
 
+function escapeMarkdownCell(value) {
+  return String(value)
+    .replace(/[\r\n\t]/g, " ")
+    .replace(/\|/g, "\\|")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .slice(0, 240);
+}
+
 function stripMetadata(bytecode) {
   // Solidity appends CBOR-encoded metadata to bytecode (compiler version, IPFS hash, etc.)
   // Last 2 bytes are little-endian length of the metadata block.
@@ -175,12 +184,12 @@ async function main() {
 
   for (const row of rows) {
     const notes = row.error
-      ? `error: ${row.error.replace(/\|/g, "\\|").slice(0, 120)}`
+      ? `error: ${escapeMarkdownCell(row.error).slice(0, 120)}`
       : row.normalizedMatch
         ? "normalized logic hash equal"
         : "normalized logic hash differs";
     lines.push(
-      `| ${row.contract} | ${row.rawMatch ? "yes" : "no"} | ${row.normalizedMatch ? "yes" : "no"} | ${row.arbSize} | ${row.avaSize} | ${notes} |`
+      `| ${escapeMarkdownCell(row.contract)} | ${row.rawMatch ? "yes" : "no"} | ${row.normalizedMatch ? "yes" : "no"} | ${row.arbSize} | ${row.avaSize} | ${escapeMarkdownCell(notes)} |`
     );
   }
 

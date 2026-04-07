@@ -3,6 +3,9 @@ name: Demo Assets Refresh
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   refresh-demo-assets:
     runs-on: ubuntu-latest
