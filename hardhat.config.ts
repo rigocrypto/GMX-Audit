@@ -22,7 +22,6 @@ function loadOptionalPlugin(pluginName: string): void {
 }
 
 // Load supported plugins if present; avoid hard failure in CI if a plugin is unavailable.
-loadOptionalPlugin("@nomicfoundation/hardhat-toolbox");
 loadOptionalPlugin("@nomicfoundation/hardhat-chai-matchers");
 loadOptionalPlugin("@nomicfoundation/hardhat-ethers");
 loadOptionalPlugin("@nomicfoundation/hardhat-network-helpers");

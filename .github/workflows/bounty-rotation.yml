@@ -150,8 +150,8 @@ jobs:
         shell: bash
         env:
           ETH_PRICE_USD: ${{ env.ETH_PRICE_USD }}
+          RPC_URL: ${{ secrets[matrix.rpc_secret] }}
         run: |
-          RPC_URL="${{ secrets[matrix.rpc_secret] }}"
           echo "::add-mask::$RPC_URL"
           if [ -z "$RPC_URL" ]; then
             echo "::warning::Missing RPC secret for ${{ matrix.chain }}. Skipping this chain."
@@ -164,7 +164,6 @@ jobs:
 
           if ! echo "$RESPONSE" | grep -q '"result":"0x'; then
             echo "::warning::RPC health check failed for ${{ matrix.chain }}. Skipping this chain."
-            echo "$RESPONSE"
             exit 0
           fi
 
