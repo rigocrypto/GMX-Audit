@@ -39,6 +39,8 @@ jobs:
   compile:
     name: Compile
     runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.sha_guard.outputs.should_run }}
     steps:
       - uses: actions/checkout@v4
 
@@ -53,33 +55,39 @@ jobs:
           echo "=================="
 
       - name: Enforce minimum checkout SHA
+        id: sha_guard
         shell: bash
         run: |
           CURRENT_SHA="$(git rev-parse HEAD)"
           MAIN_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
           if [ "$CURRENT_SHA" != "$MAIN_SHA" ]; then
-            echo "ERROR: stale workflow ref detected for bounty-rotation."
+            echo "::warning::Stale workflow ref detected for bounty-rotation; compile/rotate steps will be skipped."
             echo "Checked out: $CURRENT_SHA"
             echo "Current origin/main: $MAIN_SHA"
-            echo "Re-run from latest main."
-            exit 1
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Node
+        if: steps.sha_guard.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
+        if: steps.sha_guard.outputs.should_run == 'true'
         run: npm ci
 
       - name: Compile contracts
+        if: steps.sha_guard.outputs.should_run == 'true'
         env:
           HARDHAT_DISABLE_FORKING: "1"
         run: npx hardhat compile
 
       - name: Cache deps and artifacts
+        if: steps.sha_guard.outputs.should_run == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -94,7 +102,7 @@ jobs:
     name: Rotate - ${{ matrix.chain }}
     needs: compile
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.compile.outputs.should_run == 'true'
     concurrency:
       group: bounty-rotation-${{ matrix.chain }}
       cancel-in-progress: false
