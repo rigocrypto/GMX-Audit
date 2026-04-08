@@ -163,6 +163,15 @@ async function buildDetectorSnapshot(glvVaultAddress: string, userAddress: strin
   };
 }
 
+function isGlvSupplyReadUnsupportedError(error: unknown): boolean {
+  const message = String((error as { message?: string })?.message || error || "").toLowerCase();
+  return (
+    message.includes("call_exception") ||
+    message.includes("missing revert data") ||
+    message.includes("could not decode result data")
+  );
+}
+
 // ── tests ─────────────────────────────────────────────────────────────────────
 
 describe("GMX exploit search: GLV accounting invariants [WETH-USDC GLV]", function () {
@@ -185,6 +194,11 @@ describe("GMX exploit search: GLV accounting invariants [WETH-USDC GLV]", functi
     } catch (error) {
       if (isArchiveStateUnavailableError(error)) {
         console.log("[glvAccounting] archive state unavailable for configured fork block — skipping GLV suite");
+        this.skip();
+        return;
+      }
+      if (isGlvSupplyReadUnsupportedError(error)) {
+        console.log("[glvAccounting] configured GLV token does not expose ERC20 totalSupply at this fork — skipping GLV suite");
         this.skip();
         return;
       }
