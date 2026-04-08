@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 const { JsonRpcProvider, keccak256 } = require("ethers");
-const escapeHtml = require("escape-html");
 
 const root = process.cwd();
 const deploymentsRoot = path.join(root, "gmx-synthetics", "deployments");
@@ -9,7 +8,7 @@ const outputFile = path.join(root, "outputs", "chain_diff.md");
 
 function escapeMarkdownCell(value) {
   const normalized = String(value).replace(/[\r\n\t]/g, " ").slice(0, 240);
-  return escapeHtml(normalized).replace(/\|/g, "\\|");
+  return encodeURIComponent(normalized);
 }
 
 function stripMetadata(bytecode) {
