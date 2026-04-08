@@ -94,6 +94,7 @@ jobs:
     name: Rotate - ${{ matrix.chain }}
     needs: compile
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     concurrency:
       group: bounty-rotation-${{ matrix.chain }}
       cancel-in-progress: false
@@ -145,18 +146,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gmx-
 
-      - name: Run exploit search
+      - name: Prepare RPC secret
         if: steps.gate.outputs.skip != 'true'
         shell: bash
         env:
-          ETH_PRICE_USD: ${{ env.ETH_PRICE_USD }}
-          RPC_URL: ${{ secrets[matrix.rpc_secret] }}
+          RPC_URL_SECRET: ${{ secrets[matrix.rpc_secret] }}
         run: |
-          echo "::add-mask::$RPC_URL"
-          if [ -z "$RPC_URL" ]; then
+          echo "::add-mask::$RPC_URL_SECRET"
+          if [ -z "$RPC_URL_SECRET" ]; then
             echo "::warning::Missing RPC secret for ${{ matrix.chain }}. Skipping this chain."
+            echo "GMX_SKIP_ROTATION=1" >> "$GITHUB_ENV"
             exit 0
           fi
+
+          RPC_FILE="$RUNNER_TEMP/${{ matrix.chain }}-rpc-url"
+          printf '%s' "$RPC_URL_SECRET" > "$RPC_FILE"
+          chmod 600 "$RPC_FILE"
+          echo "GMX_RPC_FILE=$RPC_FILE" >> "$GITHUB_ENV"
+
+      - name: Run exploit search
+        if: steps.gate.outputs.skip != 'true' && env.GMX_SKIP_ROTATION != '1'
+        shell: bash
+        env:
+          ETH_PRICE_USD: ${{ env.ETH_PRICE_USD }}
+        run: |
+          RPC_URL="$(cat "$GMX_RPC_FILE")"
+          echo "::add-mask::$RPC_URL"
 
           RESPONSE=$(curl -sS -X POST "$RPC_URL" \
             -H 'Content-Type: application/json' \
