@@ -6,6 +6,8 @@ Deterministic GMX security harness for invariant hunting, continuous regression,
 [![Audit Batch CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml)
 [![Secret Scan](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml)
 
+**Start now (Growth $499/mo):** [Checkout on Stripe](https://buy.stripe.com/fZu9AT3Np2Sp48l4NygnK00)
+
 ---
 
 ## Docs
@@ -137,12 +139,12 @@ This repo is **OSS**. You can clone and run it for free.
 
 Customers pay for the **managed service**: operation + customization + SLA + reporting + integrations.
 
-Growth $499/M checkout: [Stripe link](https://buy.stripe.com/fZu9AT3Np2Sp48l4NygnK00)
+**Start now (Growth $499/mo):** [Checkout on Stripe](https://buy.stripe.com/fZu9AT3Np2Sp48l4NygnK00)
 
 ### Managed Retainer Tiers (recommended)
 | Tier | Best for | Includes | Price (USD) |
 |---|---|---|---:|
-| **CI Basic** | teams that just want a gate | nightly/weekly rotation, triage + alerts, artifacts | **$500/mo** |
+| **CI Basic** | teams that just want a gate | nightly/weekly rotation, triage + alerts, artifacts | **$500/mo** ([Buy Growth $499/mo](https://buy.stripe.com/fZu9AT3Np2Sp48l4NygnK00)) |
 | **Regression Pro** | teams shipping frequently | + dashboard trend, score reporting, weekly digest, tuning pendings | **$2,500/mo** |
 | **Bounty Enterprise** | high TVL / high stakes | + custom invariants, incident response window, white-label reports, priority support | **$8,000/mo** |
 | **Custom** | enterprise/compliance | dedicated infra/RPC, SSO portal, ticketing integrations | **$15,000+/mo** |
