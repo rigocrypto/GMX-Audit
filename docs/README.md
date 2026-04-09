@@ -13,6 +13,10 @@ Use only two docs for current execution state:
 - Gate D (Slither reentrancy/delegatecall pass): completed and triaged; highest-signal findings are access-control constrained.
 - Real exploit probe (unauthorized calls): `PASS`; OrderHandler/WithdrawalHandler privileged execute paths revert for non-privileged signer.
 
+## Coverage Highlights
+
+- Legion sealed-bid auction capital-conservation finding: [../README.md#legion-sealed-bid-auction](../README.md#legion-sealed-bid-auction).
+
 ## Evidence Files
 
 - `outputs/slither-gmx-synthetics.json`

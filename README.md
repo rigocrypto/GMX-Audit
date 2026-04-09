@@ -131,6 +131,25 @@ Liquidation reduces risk but does not restore solvency.
 
 See `outputs/` for proof bundles and reproducible test cases.
 
+### Legion (Sealed-Bid Auction)
+
+Coverage includes:
+
+* Settlement publication and withdrawal solvency consistency
+* Refund-liability accounting vs project-withdrawable accounting
+* Post-settlement claim reachability under valid Merkle proofs
+* Lifecycle reachability from publish -> withdraw -> refund claim
+
+Example finding class:
+
+* Capital conservation violation: contradictory settlement state is accepted without revert, enabling full withdrawal while valid refund obligations remain
+
+Proof characteristics:
+
+* Deterministic insolvency condition after valid flow
+* Refund claims can become permanently unclaimable due to depleted sale balance
+* Reproducible High-severity report with commit-pinned links and deterministic PoC
+
 ---
 
 ## Pricing (how customers pay)
