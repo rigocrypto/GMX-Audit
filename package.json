@@ -57,6 +57,7 @@
     "demo-client": "node scripts/demoClient.js",
     "metrics:export": "node scripts/exportMetrics.js",
     "metrics:test": "node scripts/testMetricsExport.js",
+    "schema:validate": "node scripts/validateSchemas.js",
     "manifest:validate": "node scripts/validateManifests.js",
     "manifest:roundtrip": "node scripts/testManifestSchema.js",
     "billing:start": "node scripts/billingWebhook.js",

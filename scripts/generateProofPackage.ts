@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import { generateImmunefiReport } from "./generateImmunefiReport";
+import { canonicalJson } from "./utils/canonicalJson";
 import { computeSeverity } from "./validateProof";
 
 interface ProofJson {
@@ -21,6 +22,14 @@ function sha256Short(content: string): string {
   return crypto.createHash("sha256").update(content).digest("hex").slice(0, 8);
 }
 
+function canonicalProofHash(proof: ProofJson): string {
+  return sha256Short(canonicalJson(proof));
+}
+
+function sortedEntries(values: Record<string, string>): Array<[string, string]> {
+  return Object.entries(values).sort(([left], [right]) => left.localeCompare(right));
+}
+
 function buildFolderName(proof: ProofJson, hash: string): string {
   const det = proof.detector.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 40);
   return `${proof.chain}-${proof.block}-${det}-${hash}`;
@@ -33,7 +42,7 @@ export function generateProofPackage(
 ): string {
   const raw = fs.readFileSync(proofPath, "utf8");
   const proof = JSON.parse(raw) as ProofJson;
-  const hash = sha256Short(raw);
+  const hash = canonicalProofHash(proof);
   const folderName = buildFolderName(proof, hash);
   const pkgDir = path.join(outDir, folderName);
 
@@ -43,14 +52,14 @@ export function generateProofPackage(
 
   const severity = computeSeverity({ userNet: proof.userNet, poolNet: proof.poolNet });
   const summary = {
+    schema_version: 1,
     hash,
     severity,
     detector: proof.detector,
     chain: proof.chain,
     block: proof.block,
     userNet: proof.userNet,
-    poolNet: proof.poolNet,
-    timestamp: new Date().toISOString()
+    poolNet: proof.poolNet
   };
   fs.writeFileSync(path.join(pkgDir, "summary.json"), JSON.stringify(summary, null, 2), "utf8");
 
@@ -59,14 +68,15 @@ export function generateProofPackage(
     FORK_BLOCK: String(proof.block),
     ...(proof.env || {})
   };
-  const envTxt = Object.entries(envVars)
+  const envEntries = sortedEntries(envVars);
+  const envTxt = envEntries
     .map(([k, v]) => `${k}=${v}`)
     .join("\n");
   fs.writeFileSync(path.join(pkgDir, "env.txt"), envTxt, "utf8");
 
   const testCmd = proof.repro?.command || `npx hardhat test --grep "${proof.detector}"`;
 
-  const bashExports = Object.entries(envVars)
+  const bashExports = envEntries
     .map(([k, v]) => `export ${k}="${v}"`)
     .join("\n");
   const reproSh = `#!/usr/bin/env bash
@@ -86,7 +96,7 @@ ${testCmd}
     // Ignore chmod errors on non-posix environments.
   }
 
-  const pwshExports = Object.entries(envVars)
+  const pwshExports = envEntries
     .map(([k, v]) => `$env:${k} = "${v}"`)
     .join("\n");
   const reproPs1 = `# Reproduction script - ${proof.detector}

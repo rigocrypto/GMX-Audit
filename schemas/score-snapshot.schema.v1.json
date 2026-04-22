@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SecurityScoreSnapshot",
+  "description": "Versioned snapshot of security score metrics.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "snapshot_id",
+    "run_id",
+    "score_value",
+    "created_at"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "snapshot_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "score_value": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "scoring_version": { "type": "string" },
+    "component_breakdown": {
+      "type": "object",
+      "properties": {
+        "failing": { "type": "integer", "minimum": 0 },
+        "proof_count": { "type": "integer", "minimum": 0 },
+        "unexplained_pending": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": true
+    },
+    "created_at": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
