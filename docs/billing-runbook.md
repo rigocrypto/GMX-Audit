@@ -328,3 +328,19 @@ Notes:
 ```
 
 Only move on to Billing Portal after this checklist passes once end to end.
+
+## v1.1.0 Release Gates
+
+- [x] Billing schema and service implemented
+- [x] Webhook handler with signature verification
+- [x] Managed service billing gate
+- [x] Billing Portal with auth and rate limiting
+- [x] 11 billing tests passing locally
+- [x] Billing CI workflow green
+- [x] CodeQL alerts resolved
+- [x] Docs and runbook complete
+- [ ] Stripe CLI end-to-end validation pass (test mode)
+- [ ] Billing runbook updated with validation result
+- [ ] CHANGELOG updated with release date
+- [ ] README screenshot still current
+- [ ] Existing v1.0.0 workflows still green
