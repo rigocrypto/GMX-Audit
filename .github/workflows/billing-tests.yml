@@ -1,0 +1,29 @@
+name: Billing Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  billing-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      
+      - run: npm ci
+      
+      - name: Run billing migrations
+        run: npm run billing:migrate
+      
+      - name: Run billing tests
+        run: npm run billing:test
+      
+      - name: Report results
+        if: failure()
+        run: echo "Billing test suite failed. Check logs above for details."
