@@ -18,6 +18,10 @@ All notable changes to this project will be documented in this file.
 - Sample seed data under `examples/sample-data/` with 3 representative fictional findings
 - Sample disclaimer banner in generated pages when run with `--sample` flag
 - `dashboard:sample` npm script for one-command sample regeneration
+- Per-finding detail pages with severity, impact, protocol, and block metadata
+- Reproduction command blocks (bash and PowerShell) on detail pages
+- Evidence artifact links on detail pages (proof.json, summary.json, immunefi-report.md)
+- Back-navigation from detail pages to findings explorer
 
 ### Changed
 - Upgraded dashboard generator overview template to Control Center layout

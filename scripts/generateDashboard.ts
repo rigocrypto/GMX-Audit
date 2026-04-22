@@ -595,7 +595,7 @@ function buildFindingsExplorerRows(findings: FindingRow[], triage: TriageResult 
       return `
       <tr>
         <td><span class="severity ${sevClass}">${sev}</span></td>
-        <td><!-- TODO: Commit 6 — link to finding detail page -->${escapeHtml(finding.title)}</td>
+        <td><a class="finding-link" href="findings/${escapeHtml(finding.findingId)}.html">${escapeHtml(finding.title)}</a></td>
         <td>${escapeHtml(finding.chain)}</td>
         <td class="mono">${block}</td>
         <td class="mono">${escapeHtml(finding.impact)}</td>
@@ -604,6 +604,286 @@ function buildFindingsExplorerRows(findings: FindingRow[], triage: TriageResult 
       </tr>`;
     })
     .join("\n");
+}
+
+function generateDetailHtml(finding: FindingRow, input: {
+  generatedAt: string;
+  artifactLinks: Array<{ name: string; href: string }>;
+  reproCommands: { bash: string | null; powershell: string | null };
+  isSample?: boolean;
+}): string {
+  const sev = severityLabel(finding.severity);
+  const sevClass = `sev-${finding.severity}`;
+  const block = finding.block > 0 ? finding.block.toLocaleString("en-US") : "--";
+  const sampleNotice = input.isSample
+    ? `<div class="sample-notice">Sample data &#8212; generated from example findings, not a live protocol scan.</div>`
+    : "";
+
+  const artifactSection =
+    input.artifactLinks.length > 0
+      ? input.artifactLinks
+          .map((a) => `<li><a class="artifact-link" href="${escapeHtml(a.href)}">${escapeHtml(a.name)}</a></li>`)
+          .join("\n          ")
+      : `<li class="no-artifact">No evidence artifacts found for this finding.</li>`;
+
+  const reproSection = (() => {
+    const parts: string[] = [];
+    if (input.reproCommands.bash) {
+      parts.push(`<div class="repro-block"><div class="repro-label">bash</div><pre class="repro-code">${escapeHtml(input.reproCommands.bash)}</pre></div>`);
+    }
+    if (input.reproCommands.powershell) {
+      parts.push(`<div class="repro-block"><div class="repro-label">powershell</div><pre class="repro-code">${escapeHtml(input.reproCommands.powershell)}</pre></div>`);
+    }
+    if (parts.length === 0) return `<p class="no-repro">No reproduction scripts available for this finding.</p>`;
+    return parts.join("\n");
+  })();
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GMX Audit Control Center › ${escapeHtml(finding.title)}</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --surface: #101b33;
+      --surface-2: #0f172a;
+      --border: #2c3d63;
+      --text: #dbe7ff;
+      --muted: #8ea2c9;
+      --card-radius: 14px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(59,130,246,0.16), transparent 36%),
+        radial-gradient(circle at 90% 0%, rgba(249,115,22,0.12), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      font: 14px/1.45 "Segoe UI", Tahoma, sans-serif;
+    }
+    .shell { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .breadcrumb { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+    .breadcrumb a { color: #93b4f0; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .title {
+      margin: 0 0 4px;
+      font-size: 26px;
+      letter-spacing: 0.2px;
+    }
+    .sample-notice {
+      background: rgba(245,158,11,0.12);
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 10px;
+      color: #fde68a;
+      font-size: 13px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+    }
+    .metadata {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 14px 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 24px;
+      margin: 16px 0;
+    }
+    .meta-row { display: flex; gap: 8px; align-items: baseline; }
+    .meta-label { color: var(--muted); font-size: 12px; min-width: 100px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .meta-value { font-size: 13px; }
+    .severity {
+      display: inline-block;
+      min-width: 70px;
+      text-align: center;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      letter-spacing: 0.04em;
+      border: 1px solid transparent;
+    }
+    .sev-critical { color: #fecaca; background: rgba(220,38,38,0.25); border-color: rgba(220,38,38,0.5); }
+    .sev-high { color: #fed7aa; background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.45); }
+    .sev-medium { color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.45); }
+    .sev-low { color: #d9f99d; background: rgba(132,204,22,0.2); border-color: rgba(132,204,22,0.45); }
+    .status {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid #395483;
+      background: #12244a;
+      color: #c8d8ff;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 4px 8px;
+    }
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .section h3 {
+      margin: 0;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-size: 12px;
+      background: #0f1a32;
+    }
+    .section-body { padding: 14px 18px; }
+    .repro-block { margin-bottom: 10px; }
+    .repro-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; }
+    .repro-code {
+      background: #07101f;
+      border: 1px solid #1e3256;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 0;
+      font: 13px/1.55 Consolas, monospace;
+      color: #c8d8ff;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .no-repro { color: var(--muted); margin: 0; }
+    ul.artifact-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .artifact-link {
+      color: #93b4f0;
+      text-decoration: none;
+      font-size: 13px;
+      border: 1px solid #2c4b7c;
+      border-radius: 6px;
+      padding: 4px 10px;
+      display: inline-block;
+    }
+    .artifact-link:hover { background: #1e3a6e; }
+    .no-artifact { color: var(--muted); font-size: 13px; }
+    .back-link { margin-bottom: 16px; }
+    .back-link a { color: #93b4f0; text-decoration: none; font-size: 13px; }
+    .back-link a:hover { text-decoration: underline; }
+    .footer {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0f1a32;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 16px;
+    }
+    .mono { font-family: Consolas, monospace; }
+    @media (max-width: 680px) {
+      .shell { padding: 14px; }
+      .metadata { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <nav class="breadcrumb"><a href="../overview.html">Overview</a> › <a href="../findings.html">Findings</a> › Detail</nav>
+    ${sampleNotice}
+    <h1 class="title">${escapeHtml(finding.title)}</h1>
+
+    <div class="metadata">
+      <div class="meta-row"><span class="meta-label">Severity</span><span class="meta-value"><span class="severity ${sevClass}">${sev}</span></span></div>
+      <div class="meta-row"><span class="meta-label">Status</span><span class="meta-value"><span class="status">${escapeHtml(finding.status)}</span></span></div>
+      <div class="meta-row"><span class="meta-label">Protocol</span><span class="meta-value">${escapeHtml(finding.protocol || "--")}</span></div>
+      <div class="meta-row"><span class="meta-label">Chain</span><span class="meta-value">${escapeHtml(finding.chain)}</span></div>
+      <div class="meta-row"><span class="meta-label">Block</span><span class="meta-value mono">${block}</span></div>
+      <div class="meta-row"><span class="meta-label">Impact</span><span class="meta-value mono">${escapeHtml(finding.impact)}</span></div>
+      <div class="meta-row"><span class="meta-label">Identity</span><span class="meta-value mono">${escapeHtml(finding.findingId)}</span></div>
+    </div>
+
+    <section class="section">
+      <h3>Reproduction</h3>
+      <div class="section-body">${reproSection}</div>
+    </section>
+
+    <section class="section">
+      <h3>Evidence Artifacts</h3>
+      <div class="section-body"><ul class="artifact-list">${artifactSection}</ul></div>
+    </section>
+
+    <div class="back-link"><a href="../findings.html">&#8592; Back to Findings Explorer</a></div>
+
+    <section class="footer">
+      <span>Generated: ${escapeHtml(input.generatedAt)}</span>
+      <span>Schema v1.0.0</span>
+    </section>
+  </main>
+</body>
+</html>`;
+}
+
+function generateDetailPages(
+  outDir: string,
+  findings: FindingRow[],
+  triage: TriageResult | null,
+  generatedAt: string,
+  isSample: boolean
+): string[] {
+  const detailDir = path.join(outDir, "findings");
+  fs.mkdirSync(detailDir, { recursive: true });
+
+  const written: string[] = [];
+
+  for (const finding of findings) {
+    const artifactLinks: Array<{ name: string; href: string }> = [];
+
+    // Check for proof package dir based on proof_hash from triage
+    if (triage?.proofs) {
+      const proofEntry = triage.proofs.find(
+        (p) =>
+          (p.finding_id && p.finding_id === finding.findingId) ||
+          (p.chain === finding.chain && p.block === finding.block && (p.detector || "").toLowerCase() === finding.title.split(" ")[0].toLowerCase())
+      );
+      if (proofEntry) {
+        const dirName = buildProofDirName(proofEntry);
+        if (dirName) {
+          const proofPkgDir = path.resolve(process.cwd(), "proof-packages", dirName);
+          for (const file of ["proof.json", "summary.json", "immunefi-report.md"]) {
+            const fullPath = path.join(proofPkgDir, file);
+            if (fs.existsSync(fullPath)) {
+              const rel = path.relative(detailDir, fullPath).replace(/\\/g, "/");
+              artifactLinks.push({ name: file, href: rel });
+            }
+          }
+        }
+      }
+    }
+
+    const reproCommands: { bash: string | null; powershell: string | null } = { bash: null, powershell: null };
+    // Check for repro scripts if a proof dir is found
+    if (triage?.proofs) {
+      const proofEntry = triage.proofs.find((p) => p.finding_id && p.finding_id === finding.findingId);
+      if (proofEntry) {
+        const dirName = buildProofDirName(proofEntry);
+        if (dirName) {
+          const proofPkgDir = path.resolve(process.cwd(), "proof-packages", dirName);
+          const bashPath = path.join(proofPkgDir, "repro.sh");
+          const psPath = path.join(proofPkgDir, "repro.ps1");
+          if (fs.existsSync(bashPath)) reproCommands.bash = fs.readFileSync(bashPath, "utf8").trim();
+          if (fs.existsSync(psPath)) reproCommands.powershell = fs.readFileSync(psPath, "utf8").trim();
+        }
+      }
+    }
+
+    const html = generateDetailHtml(finding, { generatedAt, artifactLinks, reproCommands, isSample });
+    const outFile = path.join(detailDir, `${finding.findingId}.html`);
+    fs.writeFileSync(outFile, html, "utf8");
+    written.push(outFile);
+  }
+
+  return written;
 }
 
 function generateFindingsHtml(input: {
@@ -798,6 +1078,8 @@ function generateFindingsHtml(input: {
       white-space: nowrap;
     }
     .proof-link:hover { background: #1e3a6e; }
+    .finding-link { color: #93b4f0; text-decoration: none; }
+    .finding-link:hover { text-decoration: underline; }
     .no-proof { color: var(--muted); }
     .mono { font-family: Consolas, monospace; }
     .sample-notice {
@@ -1339,10 +1621,13 @@ function main(): void {
   const findingsFile = path.join(path.dirname(outFile), "findings.html");
   fs.writeFileSync(findingsFile, findingsHtml, "utf8");
 
+  const detailFiles = generateDetailPages(path.dirname(outFile), findings, triage, generatedAt, isSample);
+
   console.log(`[dashboard] logs=${logs.length} parsedRuns=${parsedRuns.length} inserted=${inserted}`);
   console.log(`[dashboard] runs=${totalRuns} findings=${findings.length} proofs=${proofs.length}`);
   console.log(`[dashboard] wrote ${outFile}`);
   console.log(`[dashboard] wrote ${findingsFile}`);
+  for (const f of detailFiles) console.log(`[dashboard] wrote ${f}`);
 }
 
 if (require.main === module) {

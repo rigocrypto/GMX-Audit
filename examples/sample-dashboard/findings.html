@@ -176,6 +176,8 @@
       white-space: nowrap;
     }
     .proof-link:hover { background: #1e3a6e; }
+    .finding-link { color: #93b4f0; text-decoration: none; }
+    .finding-link:hover { text-decoration: underline; }
     .no-proof { color: var(--muted); }
     .mono { font-family: Consolas, monospace; }
     .sample-notice {
@@ -255,7 +257,7 @@
           
       <tr>
         <td><span class="severity sev-critical">CRITICAL</span></td>
-        <td><!-- TODO: Commit 6 — link to finding detail page -->Capital Conservation Violation in Settlement</td>
+        <td><a class="finding-link" href="findings/example-capital-conservation-002.html">Capital Conservation Violation in Settlement</a></td>
         <td>ethereum</td>
         <td class="mono">18,765,432</td>
         <td class="mono">$2,410,000.00</td>
@@ -265,7 +267,7 @@
 
       <tr>
         <td><span class="severity sev-high">HIGH</span></td>
-        <td><!-- TODO: Commit 6 — link to finding detail page -->Missing Oracle Freshness Validation</td>
+        <td><a class="finding-link" href="findings/example-oracle-freshness-001.html">Missing Oracle Freshness Validation</a></td>
         <td>base</td>
         <td class="mono">19,842,271</td>
         <td class="mono">$3,090,000.00</td>
@@ -275,7 +277,7 @@
 
       <tr>
         <td><span class="severity sev-medium">MEDIUM</span></td>
-        <td><!-- TODO: Commit 6 — link to finding detail page -->Liquidation Close Factor Bypass</td>
+        <td><a class="finding-link" href="findings/example-close-factor-003.html">Liquidation Close Factor Bypass</a></td>
         <td>base</td>
         <td class="mono">19,812,009</td>
         <td class="mono">$4,560.00</td>
