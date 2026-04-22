@@ -1,539 +1,382 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>gmx-audit dashboard</title>
+  <title>GMX Audit Control Center Overview</title>
   <style>
-    :root { --bg:#0f172a; --surface:#1e293b; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#3b82f6; }
+    :root {
+      --bg: #0b1220;
+      --surface: #101b33;
+      --surface-2: #0f172a;
+      --border: #2c3d63;
+      --text: #dbe7ff;
+      --muted: #8ea2c9;
+      --critical: #dc2626;
+      --high: #f97316;
+      --medium: #f59e0b;
+      --low: #65a30d;
+      --card-radius: 14px;
+    }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: "Segoe UI", Tahoma, sans-serif; background: linear-gradient(180deg,#0b1220,#0f172a); color: var(--text); }
-    header { padding: 20px 24px; border-bottom: 1px solid var(--border); background: rgba(15,23,42,0.85); }
-    h1 { margin: 0; font-size: 22px; }
-    .subtitle { color: var(--muted); margin-top: 6px; font-size: 13px; }
-    main { max-width: 1200px; margin: 0 auto; padding: 18px; }
-    .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 12px; margin-bottom: 16px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .card strong { display: block; font-size: 26px; }
-    .card span { color: var(--muted); font-size: 12px; }
-    .chart { background: var(--surface); border:1px solid var(--border); border-radius:10px; padding: 12px; margin-bottom: 16px; }
-    .chart svg { width: 100%; height: 90px; }
-    .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
-    select, input[type=text] { background: #0f172a; color: var(--text); border:1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
-    label { color: var(--muted); font-size: 13px; }
-    .table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 10px 12px; border-bottom:1px solid var(--border); text-align:left; font-size: 13px; }
-    th { color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: 0.06em; background: #111b31; }
-    tr:hover td { background: #182235; }
-    .row-danger td { background: rgba(239,68,68,0.08); }
-    .row-warning td { background: rgba(245,158,11,0.08); }
-    .chain-badge, .proof-badge, .score-badge { display:inline-block; border-radius:999px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
-    .chain-badge { border:1px solid #2459a8; color:#7cb3ff; background:#1d4ed820; }
-    .proof-badge { border:1px solid #ef4444; color:#ef4444; background:#ef444420; }
-    .pass { color:#22c55e; } .pend { color:#f59e0b; } .fail { color:#ef4444; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 10% -10%, rgba(59,130,246,0.16), transparent 36%),
+        radial-gradient(circle at 90% 0%, rgba(249,115,22,0.12), transparent 32%),
+        var(--bg);
+      color: var(--text);
+      font: 14px/1.45 "Segoe UI", Tahoma, sans-serif;
+    }
+    .shell {
+      max-width: 1260px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .title {
+      margin: 0;
+      font-size: 29px;
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 5px 10px;
+      color: var(--muted);
+      background: rgba(15,23,42,0.8);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .card {
+      background: linear-gradient(180deg, rgba(26,39,68,0.98), rgba(15,23,42,0.98));
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 14px;
+      min-height: 108px;
+    }
+    .card h2 {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .card .value {
+      margin-top: 10px;
+      font-size: 34px;
+      font-weight: 800;
+      letter-spacing: 0.4px;
+    }
+    .card .hint {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .panels {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      padding: 12px;
+    }
+    .panel h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+    }
+    .trend {
+      width: 100%;
+      height: 164px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      border: 1px solid rgba(44, 61, 99, 0.7);
+    }
+    .severity-list { display: grid; gap: 8px; }
+    .severity-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 42px;
+      align-items: center;
+      gap: 8px;
+    }
+    .severity-name { color: var(--muted); font-size: 12px; }
+    .severity-bar-wrap {
+      height: 11px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: #1c2a4a;
+      border: 1px solid #2b3b62;
+    }
+    .severity-bar { height: 100%; }
+    .severity-count {
+      text-align: right;
+      font: 600 12px/1.2 Consolas, monospace;
+      color: var(--text);
+    }
+    .formula {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px dashed #30456f;
+      padding-top: 9px;
+    }
+    .findings {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .findings h3 {
+      margin: 0;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      font-size: 13px;
+      background: #0f1a32;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #243658;
+      text-align: left;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    th {
+      background: #0f1a32;
+      color: #9db0d7;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-size: 11px;
+    }
+    tbody tr:hover td { background: #16264a; }
+    .severity {
+      display: inline-block;
+      min-width: 70px;
+      text-align: center;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 8px;
+      letter-spacing: 0.04em;
+      border: 1px solid transparent;
+    }
+    .sev-critical { color: #fecaca; background: rgba(220,38,38,0.25); border-color: rgba(220,38,38,0.5); }
+    .sev-high { color: #fed7aa; background: rgba(249,115,22,0.2); border-color: rgba(249,115,22,0.45); }
+    .sev-medium { color: #fde68a; background: rgba(245,158,11,0.2); border-color: rgba(245,158,11,0.45); }
+    .sev-low { color: #d9f99d; background: rgba(132,204,22,0.2); border-color: rgba(132,204,22,0.45); }
+    .status {
+      display: inline-block;
+      border-radius: 999px;
+      border: 1px solid #395483;
+      background: #12244a;
+      color: #c8d8ff;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 4px 8px;
+    }
     .mono { font-family: Consolas, monospace; }
-    .empty { text-align:center; color:var(--muted); padding: 24px; }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 20px;
+      white-space: normal;
+    }
+    .footer {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #0f1a32;
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    @media (max-width: 1020px) {
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .panels { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 680px) {
+      .shell { padding: 14px; }
+      .header { flex-direction: column; }
+      .cards { grid-template-columns: 1fr; }
+      th:nth-child(4), td:nth-child(4) { display: none; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>gmx-audit Security Dashboard</h1>
-    <div class="subtitle">Security Score 50/100 (Critical) · Generated 4/21/2026, 8:23:11 PM</div>
-  </header>
-  <main>
+  <main class="shell">
+    <section class="header">
+      <div>
+        <h1 class="title">GMX Audit Control Center</h1>
+        <div class="subtitle">Overview dashboard generated from deterministic pipeline artifacts</div>
+      </div>
+      <div class="chips">
+        <span class="chip">Chain: unknown</span>
+        <span class="chip">Generated: 2026-03-16T01:29:12.712Z</span>
+      </div>
+    </section>
+
     <section class="cards">
-      <article class="card" style="border-top:3px solid #ef4444"><strong style="color:#ef4444">50/100</strong><span>7-run security score avg</span></article>
-      <article class="card"><strong>36</strong><span>Total runs in dashboard</span></article>
-      <article class="card"><strong style="color:#ef4444">16</strong><span>Proofs matched to runs</span></article>
-      <article class="card"><strong>9s</strong><span>Average run duration</span></article>
+      <article class="card">
+        <h2>Security Score</h2>
+        <div class="value" style="color:#22c55e">100/100</div>
+        <div class="hint">Healthy</div>
+      </article>
+      <article class="card">
+        <h2>Total Runs</h2>
+        <div class="value">54</div>
+        <div class="hint">Historical runs in metrics database</div>
+      </article>
+      <article class="card">
+        <h2>Proofs Found</h2>
+        <div class="value">1</div>
+        <div class="hint">Validated proof package summaries</div>
+      </article>
+      <article class="card">
+        <h2>Critical / High</h2>
+        <div class="value">0</div>
+        <div class="hint">Critical 0 + High 0</div>
+      </article>
     </section>
-    <section class="chart">
-      <svg viewBox="0 0 600 90" preserveAspectRatio="none">
-    <line x1="10" y1="10" x2="580" y2="10" stroke="#334155" stroke-width="1" />
-    <line x1="10" y1="45" x2="580" y2="45" stroke="#334155" stroke-width="1" stroke-dasharray="4" />
-    <line x1="10" y1="80" x2="580" y2="80" stroke="#334155" stroke-width="1" />
-    <polyline points="10.0,10.0 29.7,45.0 49.3,10.0 69.0,45.0 88.6,13.5 108.3,13.5 127.9,13.5 147.6,48.5 167.2,13.5 186.9,13.5 206.6,10.0 226.2,45.0 245.9,31.0 265.5,66.0 285.2,31.0 304.8,66.0 324.5,31.0 344.1,66.0 363.8,17.0 383.4,52.0 403.1,31.0 422.8,66.0 442.4,17.0 462.1,52.0 481.7,31.0 501.4,66.0 521.0,17.0 540.7,52.0 560.3,31.0 580.0,66.0" fill="none" stroke="#3b82f6" stroke-width="2" />
-    <circle cx="10.0" cy="10.0" r="3.5" fill="#22c55e" />
-<circle cx="29.7" cy="45.0" r="3.5" fill="#ef4444" />
-<circle cx="49.3" cy="10.0" r="3.5" fill="#22c55e" />
-<circle cx="69.0" cy="45.0" r="3.5" fill="#ef4444" />
-<circle cx="88.6" cy="13.5" r="3.5" fill="#22c55e" />
-<circle cx="108.3" cy="13.5" r="3.5" fill="#22c55e" />
-<circle cx="127.9" cy="13.5" r="3.5" fill="#22c55e" />
-<circle cx="147.6" cy="48.5" r="3.5" fill="#ef4444" />
-<circle cx="167.2" cy="13.5" r="3.5" fill="#22c55e" />
-<circle cx="186.9" cy="13.5" r="3.5" fill="#22c55e" />
-<circle cx="206.6" cy="10.0" r="3.5" fill="#22c55e" />
-<circle cx="226.2" cy="45.0" r="3.5" fill="#ef4444" />
-<circle cx="245.9" cy="31.0" r="3.5" fill="#22c55e" />
-<circle cx="265.5" cy="66.0" r="3.5" fill="#ef4444" />
-<circle cx="285.2" cy="31.0" r="3.5" fill="#f59e0b" />
-<circle cx="304.8" cy="66.0" r="3.5" fill="#ef4444" />
-<circle cx="324.5" cy="31.0" r="3.5" fill="#22c55e" />
-<circle cx="344.1" cy="66.0" r="3.5" fill="#ef4444" />
-<circle cx="363.8" cy="17.0" r="3.5" fill="#22c55e" />
-<circle cx="383.4" cy="52.0" r="3.5" fill="#ef4444" />
-<circle cx="403.1" cy="31.0" r="3.5" fill="#22c55e" />
-<circle cx="422.8" cy="66.0" r="3.5" fill="#ef4444" />
-<circle cx="442.4" cy="17.0" r="3.5" fill="#22c55e" />
-<circle cx="462.1" cy="52.0" r="3.5" fill="#ef4444" />
-<circle cx="481.7" cy="31.0" r="3.5" fill="#22c55e" />
-<circle cx="501.4" cy="66.0" r="3.5" fill="#ef4444" />
-<circle cx="521.0" cy="17.0" r="3.5" fill="#22c55e" />
-<circle cx="540.7" cy="52.0" r="3.5" fill="#ef4444" />
-<circle cx="560.3" cy="31.0" r="3.5" fill="#22c55e" />
-<circle cx="580.0" cy="66.0" r="3.5" fill="#ef4444" />
-  </svg>
+
+    <section class="panels">
+      <article class="panel">
+        <h3>Score Over Time</h3>
+        <svg class="trend" viewBox="0 0 620 160" preserveAspectRatio="none">
+          <line x1="16" y1="16" x2="604" y2="16" stroke="#334155" stroke-width="1" />
+<line x1="16" y1="80" x2="604" y2="80" stroke="#334155" stroke-width="1" stroke-dasharray="4" />
+<line x1="16" y1="144" x2="604" y2="144" stroke="#334155" stroke-width="1" />
+<polyline points="16.0,16.0 36.3,80.0 56.6,80.0 76.8,54.4 97.1,118.4 117.4,118.4 137.7,54.4 157.9,118.4 178.2,118.4 198.5,54.4 218.8,118.4 239.0,118.4 259.3,28.8 279.6,92.8 299.9,92.8 320.1,54.4 340.4,118.4 360.7,118.4 381.0,28.8 401.2,92.8 421.5,92.8 441.8,54.4 462.1,118.4 482.3,118.4 502.6,28.8 522.9,92.8 543.2,92.8 563.4,54.4 583.7,118.4 604.0,118.4" fill="none" stroke="#3b82f6" stroke-width="2" />
+<circle cx="16.0" cy="16.0" r="3" fill="#16a34a" />
+<circle cx="36.3" cy="80.0" r="3" fill="#dc2626" />
+<circle cx="56.6" cy="80.0" r="3" fill="#dc2626" />
+<circle cx="76.8" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="97.1" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="117.4" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="137.7" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="157.9" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="178.2" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="198.5" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="218.8" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="239.0" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="259.3" cy="28.8" r="3" fill="#16a34a" />
+<circle cx="279.6" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="299.9" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="320.1" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="340.4" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="360.7" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="381.0" cy="28.8" r="3" fill="#16a34a" />
+<circle cx="401.2" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="421.5" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="441.8" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="462.1" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="482.3" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="502.6" cy="28.8" r="3" fill="#16a34a" />
+<circle cx="522.9" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="543.2" cy="92.8" r="3" fill="#dc2626" />
+<circle cx="563.4" cy="54.4" r="3" fill="#f59e0b" />
+<circle cx="583.7" cy="118.4" r="3" fill="#dc2626" />
+<circle cx="604.0" cy="118.4" r="3" fill="#dc2626" />
+        </svg>
+      </article>
+      <article class="panel">
+        <h3>Severity Breakdown</h3>
+        <div class="severity-list">
+          
+      <div class="severity-row">
+        <div class="severity-name">Critical</div>
+        <div class="severity-bar-wrap"><div class="severity-bar" style="width:0.00%;background:#dc2626"></div></div>
+        <div class="severity-count">0</div>
+      </div>
+
+      <div class="severity-row">
+        <div class="severity-name">High</div>
+        <div class="severity-bar-wrap"><div class="severity-bar" style="width:0.00%;background:#f97316"></div></div>
+        <div class="severity-count">0</div>
+      </div>
+
+      <div class="severity-row">
+        <div class="severity-name">Medium</div>
+        <div class="severity-bar-wrap"><div class="severity-bar" style="width:0.00%;background:#f59e0b"></div></div>
+        <div class="severity-count">0</div>
+      </div>
+
+      <div class="severity-row">
+        <div class="severity-name">Low</div>
+        <div class="severity-bar-wrap"><div class="severity-bar" style="width:0.00%;background:#65a30d"></div></div>
+        <div class="severity-count">0</div>
+      </div>
+        </div>
+        <div class="formula">
+          Score formula (v1): start at 100 and deduct per finding.
+          Critical -25, High -15, Medium -5, Low -1. Clamped to 0..100.
+        </div>
+      </article>
     </section>
-    <section>
-      <div class="filters">
-        <select id="chainFilter"><option value="all">all</option>
-<option value="unknown">unknown</option></select>
-        <input type="text" id="blockSearch" placeholder="Block filter" />
-        <label><input type="checkbox" id="proofsOnly" /> proofs only</label>
-        <label><input type="checkbox" id="failuresOnly" /> failures only</label>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr><th>Time</th><th>Chain</th><th>Block</th><th>Pass/Pend/Fail</th><th>Proofs</th><th>Score</th><th>Duration</th><th>Log Path</th></tr>
-          </thead>
-          <tbody id="rows">
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:45 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>5s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419600000.log</td>
-      </tr>
 
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:45 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>5s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419600000.log</td>
-      </tr>
+    <section class="findings">
+      <h3>Latest Findings</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:94px">Sev</th>
+            <th>Title</th>
+            <th style="width:90px">Chain</th>
+            <th style="width:120px">Block</th>
+            <th style="width:140px">Impact</th>
+            <th style="width:110px">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="empty">No findings in current triage artifact.</td></tr>
+        </tbody>
+      </table>
+    </section>
 
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:45 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">40</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419600000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:45 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">90</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419600000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:42 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>9s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419700000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:42 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>9s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419700000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:42 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">40</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419700000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:42 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">90</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419700000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:39 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>5s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419800000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:39 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>5s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419800000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:39 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">40</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419800000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:39 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">1</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">90</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419800000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:36 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>6s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419900000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:36 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>6s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-419900000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="1">
-        <td>3/15/26, 11:36 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">1</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419900000.log</td>
-      </tr>
-
-      <tr class="row-warning" data-chain="unknown" data-proofs="0" data-failing="1">
-        <td>3/15/26, 11:36 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">1</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-419900000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:34 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">20</span></td>
-        <td>4s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-420000000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:34 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">2</span> / <span class="pend">25</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#f59e0b20;color:#f59e0b;border:1px solid #f59e0b">70</span></td>
-        <td>4s</td>
-        <td>exploit-proofs/rotation-logs/ava-block-420000000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 11:33 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-420000000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 11:33 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/arb-block-420000000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">419,600,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">95</span></td>
-        <td>35s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">419,800,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">95</span></td>
-        <td>53s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">420,000,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">45</span></td>
-        <td>38s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">419,600,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">95</span></td>
-        <td>35s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">419,800,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">95</span></td>
-        <td>53s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">420,000,000</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">95</span></td>
-        <td>38s</td>
-        <td>rotation.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419600000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:32 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419600000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:29 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419700000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:29 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419700000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:26 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419800000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:26 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419800000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:21 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419900000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:21 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-419900000.log</td>
-      </tr>
-
-      <tr class="row-danger" data-chain="unknown" data-proofs="1" data-failing="0">
-        <td>3/15/26, 3:18 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td><span class="proof-badge">1</span></td>
-        <td><span class="score-badge" style="background:#ef444420;color:#ef4444;border:1px solid #ef4444">50</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-420000000.log</td>
-      </tr>
-
-      <tr class="" data-chain="unknown" data-proofs="0" data-failing="0">
-        <td>3/15/26, 3:18 AM</td>
-        <td><span class="chain-badge">unknown</span></td>
-        <td class="mono">-</td>
-        <td><span class="pass">38</span> / <span class="pend">0</span> / <span class="fail">0</span></td>
-        <td>0</td>
-        <td><span class="score-badge" style="background:#22c55e20;color:#22c55e;border:1px solid #22c55e">100</span></td>
-        <td>0s</td>
-        <td>exploit-proofs/rotation-logs/block-420000000.log</td>
-      </tr></tbody>
-        </table>
-      </div>
+    <section class="footer">
+      <span>Generated: 2026-03-16T01:29:12.712Z</span>
+      <span>Schema v1.0.0</span>
     </section>
   </main>
-  <script>
-    (function() {
-      const rows = Array.from(document.querySelectorAll('#rows tr'));
-      const chainFilter = document.getElementById('chainFilter');
-      const blockSearch = document.getElementById('blockSearch');
-      const proofsOnly = document.getElementById('proofsOnly');
-      const failuresOnly = document.getElementById('failuresOnly');
-
-      function applyFilters() {
-        const chain = chainFilter.value;
-        const block = blockSearch.value.trim();
-        const onlyProofs = proofsOnly.checked;
-        const onlyFailing = failuresOnly.checked;
-
-        rows.forEach((row) => {
-          const rowChain = row.getAttribute('data-chain') || '';
-          const rowProofs = Number(row.getAttribute('data-proofs') || '0');
-          const rowFailing = Number(row.getAttribute('data-failing') || '0');
-          const rowBlock = (row.children[2] && row.children[2].textContent) || '';
-
-          let visible = true;
-          if (chain !== 'all' && rowChain !== chain) visible = false;
-          if (block && rowBlock.indexOf(block) === -1) visible = false;
-          if (onlyProofs && rowProofs === 0) visible = false;
-          if (onlyFailing && rowFailing === 0) visible = false;
-
-          row.style.display = visible ? '' : 'none';
-        });
-      }
-
-      chainFilter.addEventListener('change', applyFilters);
-      blockSearch.addEventListener('input', applyFilters);
-      proofsOnly.addEventListener('change', applyFilters);
-      failuresOnly.addEventListener('change', applyFilters);
-    })();
-  </script>
 </body>
 </html>
