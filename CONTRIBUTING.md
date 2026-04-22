@@ -69,3 +69,24 @@ CI verifies that committed sample output is up to date and will fail when the sa
 - [ ] Relevant tests pass
 - [ ] No secrets added
 - [ ] Docs updated for user-facing behavior changes
+
+## Billing Integration Notes
+
+- Use Stripe test keys locally; never commit live billing secrets.
+- Run billing schema setup before billing tests:
+
+```bash
+npm run billing:migrate
+```
+
+- Legacy queue harness remains available for regression checks:
+
+```bash
+npm run billing:test
+```
+
+- New webhook server entrypoint for local Stripe CLI forwarding:
+
+```bash
+npm run billing:webhook-server
+```

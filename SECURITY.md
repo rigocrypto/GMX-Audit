@@ -66,3 +66,13 @@ Status:
 
 Risk is accepted and monitored pending upstream remediation.
 The dependency will be updated or removed when a patched version or alternative becomes available.
+
+## Stripe Billing Security
+
+Managed billing integrations must follow these controls:
+
+- Keep `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` only in environment variables or secret managers.
+- Verify every Stripe webhook signature before processing payloads.
+- Treat webhook event IDs as idempotency keys; never process the same event twice.
+- Never store card numbers, CVC, or full payment method payloads in local databases.
+- Use HTTPS-only webhook endpoints in deployed environments.

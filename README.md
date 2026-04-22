@@ -145,6 +145,26 @@ Includes:
 
 Details: [Managed service docs](docs/managed-service.md)
 
+### Billing Model
+
+- OSS workflows in this repository stay free and ungated.
+- Billing applies only to hosted managed-service capabilities.
+- Stripe handles checkout, subscriptions, invoices, retries, and customer billing portal actions.
+- Webhooks are authoritative for billing state changes; browser redirects are not used as source of truth.
+
+Handled Stripe events:
+
+- `checkout.session.completed`
+- `invoice.paid`
+- `invoice.payment_failed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+Architecture and operations details:
+
+- [Stripe integration architecture](docs/stripe-integration.md)
+- [Billing runbook](docs/billing-runbook.md)
+
 ---
 
 ## Quickstart (OSS)

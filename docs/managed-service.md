@@ -111,3 +111,31 @@ Auth:
 - Rotate RPC/API tokens regularly.
 - Use least-privilege secrets per environment.
 - Keep managed runner infrastructure private; expose only dashboard endpoints as needed.
+
+## Billing Lifecycle
+
+Managed operations are gated by internal billing state derived from Stripe webhooks.
+
+Primary webhook events:
+
+- `checkout.session.completed`
+- `invoice.paid`
+- `invoice.payment_failed`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+
+Behavior:
+
+- `active` / `trialing`: managed runs are allowed.
+- `past_due`, `incomplete`, `suspended`: managed runs are blocked.
+- `canceled`: managed runs are blocked; historical access can remain read-only within grace policy.
+
+Dashboard behavior:
+
+- Latest dashboard route returns a billing-required notice when account is not active.
+- Historical metadata routes can remain available during read-only grace windows.
+
+For architecture and operational procedures, see:
+
+- `docs/stripe-integration.md`
+- `docs/billing-runbook.md`
