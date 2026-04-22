@@ -39,6 +39,17 @@ npm run test:gmx-invariants:full
 npm run test:gmx-exploit-search:extended
 ```
 
+## Sample Dashboard Freshness
+
+The repository keeps a committed sample dashboard in `examples/sample-dashboard/`.
+If you change dashboard generation logic, regenerate the sample before opening a PR:
+
+```bash
+npm run dashboard:sample
+```
+
+CI verifies that committed sample output is up to date and will fail when the sample is stale.
+
 ## Adding a New Chain or Market Context
 
 1. Extend chain defaults and market config in harness/deployed helpers.
