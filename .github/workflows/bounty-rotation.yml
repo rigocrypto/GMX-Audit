@@ -332,6 +332,10 @@ jobs:
           jq -e 'has("total_proofs") and has("has_critical") and has("has_high") and has("summary_text") and has("eth_price_used") and has("eth_price_source") and has("triage_tool_version")' outputs/triage/triage-result.json >/dev/null
           echo "Schema version OK: $VERSION"
 
+      - name: Validate Control Center schemas
+        shell: bash
+        run: npm run schema:validate
+
       - name: Log triage pricing metadata
         shell: bash
         run: |

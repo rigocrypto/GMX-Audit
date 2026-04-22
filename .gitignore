@@ -40,3 +40,9 @@ config/clients/*.config.ts
 .env.*
 !.env.example
 !.env.managed.example
+
+# Workspace scratch / unrelated experiments
+init_mantle_page.html
+mapper_result.txt
+repro-new-output.txt
+test/whitechain/WhitechainBridgeAdversarial.t.sol

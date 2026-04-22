@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProofPackageSummary",
+  "description": "Summary metadata for a generated proof package.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "hash",
+    "severity",
+    "detector",
+    "chain",
+    "block",
+    "userNet",
+    "poolNet"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "hash": { "type": "string", "pattern": "^[a-f0-9]{8}$" },
+    "severity": { "type": "string", "enum": ["Critical", "High", "Medium"] },
+    "detector": { "type": "string", "minLength": 1 },
+    "chain": { "type": "string", "minLength": 1 },
+    "block": { "type": "integer", "minimum": 0 },
+    "userNet": { "type": "string", "minLength": 1 },
+    "poolNet": { "type": "string", "minLength": 1 },
+    "timestamp": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
