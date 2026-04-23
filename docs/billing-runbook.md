@@ -30,6 +30,8 @@ Required env:
 - `BILLING_PORTAL_API_TOKEN`
 - `BILLING_PORTAL_RATE_LIMIT_WINDOW_MS` (default: `60000` ms)
 - `BILLING_PORTAL_RATE_LIMIT_MAX` (default: `10` requests per window)
+- `BILLING_WEBHOOK_RATE_LIMIT_WINDOW_MS` (default: `60000` ms)
+- `BILLING_WEBHOOK_RATE_LIMIT_MAX` (default: `120` requests per window)
 
 **Note:** Rate limiting state is in-memory and resets on server restart. For
 multi-instance deployments, replace the default `express-rate-limit` store with

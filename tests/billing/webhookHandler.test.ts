@@ -87,6 +87,7 @@ describe("webhookHandler", () => {
     process.env.BILLING_PORTAL_API_TOKEN = "portal-token";
     process.env.BILLING_PORTAL_RETURN_URL = "https://managed.example.com/billing";
     process.env.BILLING_PORTAL_RATE_LIMIT_MAX = "10";
+    process.env.BILLING_WEBHOOK_RATE_LIMIT_MAX = "120";
 
     runBillingMigrations();
 
@@ -111,6 +112,7 @@ describe("webhookHandler", () => {
     delete process.env.BILLING_PORTAL_API_TOKEN;
     delete process.env.BILLING_PORTAL_RETURN_URL;
     delete process.env.BILLING_PORTAL_RATE_LIMIT_MAX;
+    delete process.env.BILLING_WEBHOOK_RATE_LIMIT_MAX;
     fs.rmSync(root, { recursive: true, force: true });
   });
 
@@ -195,6 +197,31 @@ describe("webhookHandler", () => {
 
     const res = await post(address.port, payload, "invalid");
     assert.equal(res.status, 400);
+  });
+
+  it("rate limits repeated webhook requests", async () => {
+    process.env.BILLING_WEBHOOK_RATE_LIMIT_MAX = "1";
+
+    await new Promise((resolve) => server.close(() => resolve()));
+
+    const app = createBillingWebhookApp({
+      stripeClient: stripe,
+      createPortalSession: async (stripeCustomerId, returnUrl) => {
+        return `${returnUrl}?customer=${stripeCustomerId}`;
+      }
+    });
+    server = app.listen(0);
+    await new Promise((resolve) => server.once("listening", () => resolve()));
+
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port");
+
+    const payload = JSON.stringify({ id: "evt_rate_limit", object: "event", type: "invoice.paid", data: { object: {} } });
+    const first = await post(address.port, payload, "invalid");
+    const second = await post(address.port, payload, "invalid");
+
+    assert.equal(first.status, 400);
+    assert.equal(second.status, 429);
   });
 
   it("processes invoice.paid and is idempotent", async () => {

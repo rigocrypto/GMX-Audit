@@ -17,6 +17,8 @@ type BillingAppOptions = {
 
 const DEFAULT_PORTAL_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_PORTAL_RATE_LIMIT_MAX = 10;
+const DEFAULT_WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_WEBHOOK_RATE_LIMIT_MAX = 120;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -102,6 +104,16 @@ function createBillingPortalLimiter() {
   return rateLimit({
     windowMs: getPositiveIntEnv("BILLING_PORTAL_RATE_LIMIT_WINDOW_MS", DEFAULT_PORTAL_RATE_LIMIT_WINDOW_MS),
     max: getPositiveIntEnv("BILLING_PORTAL_RATE_LIMIT_MAX", DEFAULT_PORTAL_RATE_LIMIT_MAX),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { ok: false, error: "rate_limited" }
+  });
+}
+
+function createBillingWebhookLimiter() {
+  return rateLimit({
+    windowMs: getPositiveIntEnv("BILLING_WEBHOOK_RATE_LIMIT_WINDOW_MS", DEFAULT_WEBHOOK_RATE_LIMIT_WINDOW_MS),
+    max: getPositiveIntEnv("BILLING_WEBHOOK_RATE_LIMIT_MAX", DEFAULT_WEBHOOK_RATE_LIMIT_MAX),
     standardHeaders: true,
     legacyHeaders: false,
     message: { ok: false, error: "rate_limited" }
@@ -434,6 +446,7 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const createPortalSession = options.createPortalSession ?? createBillingPortalSession;
   const billingPortalLimiter = createBillingPortalLimiter();
+  const billingWebhookLimiter = createBillingWebhookLimiter();
 
   const app = express();
 
@@ -494,7 +507,7 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
     }
   });
 
-  app.post("/api/webhooks/stripe", express.raw({ type: "application/json" }), (req: Request, res: Response) => {
+  app.post("/api/webhooks/stripe", billingWebhookLimiter, express.raw({ type: "application/json" }), (req: Request, res: Response) => {
     if (!webhookSecret) {
       res.status(500).json({ ok: false, error: "missing_webhook_secret" });
       return;
