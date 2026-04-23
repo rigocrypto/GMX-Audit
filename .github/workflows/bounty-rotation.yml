@@ -39,6 +39,7 @@ jobs:
   compile:
     name: Compile
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     outputs:
       should_run: ${{ steps.sha_guard.outputs.should_run }}
     steps:
@@ -102,6 +103,7 @@ jobs:
     name: Rotate - ${{ matrix.chain }}
     needs: compile
     runs-on: ubuntu-latest
+    timeout-minutes: 120
     if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.compile.outputs.should_run == 'true'
     concurrency:
       group: bounty-rotation-${{ matrix.chain }}
@@ -152,46 +154,41 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gmx-
 
-      - name: Prepare Arbitrum RPC secret
-        if: steps.gate.outputs.skip != 'true' && matrix.chain == 'arbitrum'
+      - name: Prepare RPC secret
+        id: prepare_rpc
+        if: steps.gate.outputs.skip != 'true'
         shell: bash
         env:
-          RPC_URL_SECRET: ${{ secrets.ARBITRUM_RPC_URL }}
+          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+          AVALANCHE_RPC_URL: ${{ secrets.AVALANCHE_RPC_URL }}
         run: |
-          echo "::add-mask::$RPC_URL_SECRET"
+          if [ "${{ matrix.chain }}" = "arbitrum" ]; then
+            RPC_URL_SECRET="$ARBITRUM_RPC_URL"
+          else
+            RPC_URL_SECRET="$AVALANCHE_RPC_URL"
+          fi
+
           if [ -z "$RPC_URL_SECRET" ]; then
             echo "::warning::Missing RPC secret for ${{ matrix.chain }}. Skipping this chain."
-            echo "GMX_SKIP_ROTATION=1" >> "$GITHUB_ENV"
+            echo "skip_rotation=true" >> "$GITHUB_OUTPUT"
+            echo "rpc_file=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          echo "::add-mask::$RPC_URL_SECRET"
 
           RPC_FILE="$RUNNER_TEMP/${{ matrix.chain }}-rpc-url"
           printf '%s' "$RPC_URL_SECRET" > "$RPC_FILE"
           chmod 600 "$RPC_FILE"
-          echo "GMX_RPC_FILE=$RPC_FILE" >> "$GITHUB_ENV"
 
-      - name: Prepare Avalanche RPC secret
-        if: steps.gate.outputs.skip != 'true' && matrix.chain == 'avalanche'
-        shell: bash
-        env:
-          RPC_URL_SECRET: ${{ secrets.AVALANCHE_RPC_URL }}
-        run: |
-          echo "::add-mask::$RPC_URL_SECRET"
-          if [ -z "$RPC_URL_SECRET" ]; then
-            echo "::warning::Missing RPC secret for ${{ matrix.chain }}. Skipping this chain."
-            echo "GMX_SKIP_ROTATION=1" >> "$GITHUB_ENV"
-            exit 0
-          fi
-
-          RPC_FILE="$RUNNER_TEMP/${{ matrix.chain }}-rpc-url"
-          printf '%s' "$RPC_URL_SECRET" > "$RPC_FILE"
-          chmod 600 "$RPC_FILE"
-          echo "GMX_RPC_FILE=$RPC_FILE" >> "$GITHUB_ENV"
+          echo "skip_rotation=false" >> "$GITHUB_OUTPUT"
+          echo "rpc_file=$RPC_FILE" >> "$GITHUB_OUTPUT"
 
       - name: Run exploit search
-        if: steps.gate.outputs.skip != 'true' && env.GMX_SKIP_ROTATION != '1'
+        if: steps.gate.outputs.skip != 'true' && steps.prepare_rpc.outputs.skip_rotation != 'true'
         shell: bash
         env:
+          GMX_RPC_FILE: ${{ steps.prepare_rpc.outputs.rpc_file }}
           ETH_PRICE_USD: ${{ env.ETH_PRICE_USD }}
         run: |
           RPC_URL="$(cat "$GMX_RPC_FILE")"
@@ -251,6 +248,7 @@ jobs:
     name: Triage
     needs: [rotate]
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     if: always()
     outputs:
       has_critical: ${{ steps.outputs.outputs.has_critical }}
@@ -272,7 +270,22 @@ jobs:
       - name: Ensure jq is available
         run: sudo apt-get update && sudo apt-get install -y jq
 
+      - name: Detect missing RPC configuration
+        id: rpc_gate
+        shell: bash
+        env:
+          ARBITRUM_RPC_URL: ${{ secrets.ARBITRUM_RPC_URL }}
+          AVALANCHE_RPC_URL: ${{ secrets.AVALANCHE_RPC_URL }}
+        run: |
+          if [ -z "$ARBITRUM_RPC_URL" ] && [ -z "$AVALANCHE_RPC_URL" ]; then
+            echo "::warning::No RPC secrets configured; skipping smoke tests in triage."
+            echo "skip_smoke=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_smoke=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run smoke tests
+        if: steps.rpc_gate.outputs.skip_smoke != 'true'
         run: npm run smoke:all
 
       - name: Download all proofs
@@ -377,6 +390,7 @@ jobs:
     name: Alert
     needs: triage
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       issues: write
@@ -540,6 +554,7 @@ jobs:
     name: Auto Package
     needs: triage
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: needs.triage.outputs.proof_count != '0'
     steps:
       - uses: actions/checkout@v4
@@ -589,6 +604,7 @@ jobs:
     name: Dashboard
     needs: [triage, rotate]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: always()
     steps:
       - uses: actions/checkout@v4
