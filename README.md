@@ -1,8 +1,6 @@
 ﻿# GMX Audit Control Center
 
-<p align="center">
-  <img src="docs/assets/GMX-AUDITS-LOGO.jpeg" alt="GMX Audit Logo" width="280" />
-</p>
+![GMX Audit Logo](docs/assets/GMX-AUDITS-LOGO.jpeg)
 
 Continuous security. Real economic impact. Submission ready.
 
@@ -281,7 +279,7 @@ Customers pay for managed service operation, customization, and reporting.
 **Managed plan (Growth $499/mo):** [Checkout on Stripe](https://buy.stripe.com/fZu9AT3Np2Sp48l4NygnK00)
 
 | Tier | Best for | Includes | Price (USD) |
-|---|---|---|---:|
+| --- | --- | --- | ---: |
 | **CI Basic** | teams that want a reliable gate | nightly or weekly rotation, triage, alerts, artifacts | **$500/mo** |
 | **Regression Pro** | teams shipping frequently | + score trend reporting, weekly digest, tuning support | **$2,500/mo** |
 | **Bounty Enterprise** | high TVL protocols | + custom invariants, incident response window, white-label reports | **$8,000/mo** |
