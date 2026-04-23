@@ -124,7 +124,7 @@ The package is designed for deterministic replay and submission workflows.
 
 ![Control Center Overview](https://raw.githubusercontent.com/rigocrypto/bounty-rotation-harness/main/examples/sample-dashboard/screenshot.png)
 
-[View sample dashboard ->](https://cdn.jsdelivr.net/gh/rigocrypto/bounty-rotation-harness@main/examples/sample-dashboard/overview.html)
+[View sample dashboard ->](https://htmlpreview.github.io/?https://raw.githubusercontent.com/rigocrypto/bounty-rotation-harness/main/examples/sample-dashboard/overview.html)
 
 > Sample generated from a representative run. Actual outputs reflect
 > your protocol targets and run configuration.
