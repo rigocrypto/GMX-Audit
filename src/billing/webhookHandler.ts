@@ -25,6 +25,24 @@ const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 30;
 const DEFAULT_WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_WEBHOOK_RATE_LIMIT_MAX = 120;
 
+function resolveTrustProxySetting(): boolean | number {
+  const rawValue = process.env.BILLING_TRUST_PROXY;
+  if (!rawValue) {
+    return 1;
+  }
+
+  const normalized = rawValue.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+
+  const hops = Number.parseInt(normalized, 10);
+  if (Number.isFinite(hops) && hops >= 0) {
+    return hops;
+  }
+
+  return 1;
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -495,6 +513,7 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
   const billingWebhookLimiter = createBillingWebhookLimiter();
 
   const app = express();
+  app.set("trust proxy", resolveTrustProxySetting());
 
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
