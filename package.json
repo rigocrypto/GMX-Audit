@@ -68,6 +68,8 @@
     "billing:seed": "ts-node src/billing/seed.ts",
     "billing:status": "ts-node src/billing/status.ts",
     "billing:webhook-server": "ts-node --transpile-only src/billing/server.ts",
+    "billing:daily-summary": "ts-node --transpile-only src/billing/dailySummary.ts",
+    "billing:health-alert": "ts-node --transpile-only src/billing/healthAlert.ts",
     "billing:test": "mocha --require tsx tests/billing/**/*.test.ts --timeout 10000",
     "billing:test:legacy": "node scripts/testBillingQueue.js",
     "anvil:moonwell": "powershell -ExecutionPolicy Bypass -File scripts/start-moonwell-anvil.ps1",

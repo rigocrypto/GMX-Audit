@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import Stripe from "stripe";
 
+import { BillingAlert, BillingAlertNotifier, createBillingAlertNotifierFromEnv } from "./alerts";
 import { openBillingDb } from "./db";
 import { createBillingPortalSession } from "./portal";
 import { getBillingAccount } from "./billingService";
@@ -16,6 +17,7 @@ type BillingAppOptions = {
   stripeClient?: Stripe;
   createPortalSession?: PortalSessionFactory;
   createCheckoutSession?: CheckoutSessionFactory;
+  alertNotifier?: BillingAlertNotifier;
 };
 
 const DEFAULT_PORTAL_RATE_LIMIT_WINDOW_MS = 60_000;
@@ -24,6 +26,12 @@ const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 30;
 const DEFAULT_WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_WEBHOOK_RATE_LIMIT_MAX = 120;
+const DEFAULT_ALERT_5XX_THRESHOLD = 3;
+const DEFAULT_ALERT_5XX_WINDOW_SEC = 600;
+const DEFAULT_ALERT_4XX_THRESHOLD = 5;
+const DEFAULT_ALERT_4XX_WINDOW_SEC = 900;
+const DEFAULT_ALERT_CONSECUTIVE_FAILURES = 3;
+const DEFAULT_ALERT_COOLDOWN_SEC = 600;
 
 function resolveTrustProxySetting(): boolean | number {
   const rawValue = process.env.BILLING_TRUST_PROXY;
@@ -151,6 +159,104 @@ function createBillingWebhookLimiter() {
     legacyHeaders: false,
     message: { ok: false, error: "rate_limited" }
   });
+}
+
+type WebhookAttempt = {
+  eventId?: string;
+  eventType?: string;
+  httpStatus: number;
+  errorCode?: string;
+  isDuplicate?: boolean;
+};
+
+function recordWebhookAttempt(attempt: WebhookAttempt): void {
+  const db = openBillingDb();
+  try {
+    db.prepare(
+      `CREATE TABLE IF NOT EXISTS billing_webhook_attempts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        stripe_event_id TEXT,
+        event_type TEXT,
+        http_status INTEGER NOT NULL,
+        error_code TEXT,
+        is_duplicate INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+      )`
+    ).run();
+
+    db.prepare(
+      `INSERT INTO billing_webhook_attempts (
+        stripe_event_id,
+        event_type,
+        http_status,
+        error_code,
+        is_duplicate,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(
+      attempt.eventId ?? null,
+      attempt.eventType ?? null,
+      attempt.httpStatus,
+      attempt.errorCode ?? null,
+      attempt.isDuplicate ? 1 : 0,
+      nowIso()
+    );
+  } finally {
+    db.close();
+  }
+}
+
+function countWebhookStatuses(minStatus: number, maxStatus: number, lookbackSec: number): number {
+  const db = openBillingDb();
+  try {
+    const row = db
+      .prepare(
+        `SELECT COUNT(*) as c
+         FROM billing_webhook_attempts
+         WHERE http_status BETWEEN ? AND ?
+           AND created_at >= datetime('now', ?)`
+      )
+      .get(minStatus, maxStatus, `-${lookbackSec} seconds`) as { c: number } | undefined;
+
+    return Number(row?.c ?? 0);
+  } finally {
+    db.close();
+  }
+}
+
+function hasConsecutiveWebhookFailures(limit: number): boolean {
+  const db = openBillingDb();
+  try {
+    const rows = db
+      .prepare(
+        `SELECT http_status
+         FROM billing_webhook_attempts
+         ORDER BY id DESC
+         LIMIT ?`
+      )
+      .all(limit) as Array<{ http_status: number }>;
+
+    return rows.length === limit && rows.every((row) => row.http_status >= 400);
+  } finally {
+    db.close();
+  }
+}
+
+function createWebhookAlertDispatcher(notify: BillingAlertNotifier): (alert: BillingAlert) => void {
+  const cooldownSec = getPositiveIntEnv("BILLING_ALERT_COOLDOWN_SEC", DEFAULT_ALERT_COOLDOWN_SEC);
+  const lastAlertAt = new Map<string, number>();
+
+  return (alert: BillingAlert): void => {
+    const now = Date.now();
+    const key = `${alert.level}:${alert.title}`;
+    const previous = lastAlertAt.get(key) ?? 0;
+    if (now - previous < cooldownSec * 1000) {
+      return;
+    }
+
+    lastAlertAt.set(key, now);
+    void notify({ ...alert, timestamp: alert.timestamp ?? nowIso() });
+  };
 }
 
 export function isEventProcessed(stripeEventId: string): boolean {
@@ -508,6 +614,8 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const createPortalSession = options.createPortalSession ?? createBillingPortalSession;
   const createCheckoutSession = options.createCheckoutSession ?? createOneTimeCheckoutSession;
+  const alertNotifier = options.alertNotifier ?? createBillingAlertNotifierFromEnv();
+  const emitAlert = createWebhookAlertDispatcher(alertNotifier);
   const billingPortalLimiter = createBillingPortalLimiter();
   const billingCheckoutLimiter = createBillingCheckoutLimiter();
   const billingWebhookLimiter = createBillingWebhookLimiter();
@@ -618,12 +726,21 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
 
   app.post("/api/webhooks/stripe", billingWebhookLimiter, express.raw({ type: "application/json" }), (req: Request, res: Response) => {
     if (!webhookSecret) {
+      recordWebhookAttempt({ httpStatus: 500, errorCode: "missing_webhook_secret" });
+      emitAlert({
+        title: "Webhook returned 500",
+        level: "critical",
+        source: "billing-webhook",
+        message: "STRIPE_WEBHOOK_SECRET is missing; Stripe deliveries will fail.",
+        details: { errorCode: "missing_webhook_secret" }
+      });
       res.status(500).json({ ok: false, error: "missing_webhook_secret" });
       return;
     }
 
     const signature = req.headers["stripe-signature"];
     if (!signature || typeof signature !== "string") {
+      recordWebhookAttempt({ httpStatus: 400, errorCode: "missing_signature" });
       res.status(400).json({ ok: false, error: "missing_signature" });
       return;
     }
@@ -632,18 +749,59 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
     try {
       event = client.webhooks.constructEvent(req.body, signature, webhookSecret);
     } catch (error) {
+      recordWebhookAttempt({ httpStatus: 400, errorCode: "invalid_signature" });
       res.status(400).json({ ok: false, error: "invalid_signature", message: (error as Error).message });
+
+      const fourXxThreshold = getPositiveIntEnv("BILLING_ALERT_WEBHOOK_4XX_THRESHOLD", DEFAULT_ALERT_4XX_THRESHOLD);
+      const fourXxWindowSec = getPositiveIntEnv("BILLING_ALERT_WEBHOOK_4XX_WINDOW_SEC", DEFAULT_ALERT_4XX_WINDOW_SEC);
+      const fourXxCount = countWebhookStatuses(400, 499, fourXxWindowSec);
+      if (fourXxCount > fourXxThreshold) {
+        emitAlert({
+          title: "Webhook 4xx spike",
+          level: "warning",
+          source: "billing-webhook",
+          message: "Webhook endpoint returned elevated 4xx responses.",
+          details: { count: fourXxCount, threshold: fourXxThreshold, windowSec: fourXxWindowSec }
+        });
+      }
+
       return;
     }
 
     try {
       if (isEventProcessed(event.id)) {
+        recordWebhookAttempt({
+          eventId: event.id,
+          eventType: event.type,
+          httpStatus: 200,
+          isDuplicate: true
+        });
         res.status(200).json({ ok: true, duplicate: true });
         return;
       }
 
       const linkedAccountId = routeEvent(event);
       linkEvent(event.id, event.type, linkedAccountId);
+      recordWebhookAttempt({ eventId: event.id, eventType: event.type, httpStatus: 200 });
+
+      if (event.type === "invoice.payment_failed") {
+        const invoice = event.data.object as Stripe.Invoice;
+        emitAlert({
+          title: "Invoice payment failed",
+          level: "critical",
+          source: "billing-webhook",
+          message: "Stripe reported invoice.payment_failed.",
+          details: {
+            eventId: event.id,
+            invoiceId: invoice.id,
+            customerId: invoice.customer,
+            subscriptionId: (invoice as Stripe.Invoice & { subscription?: string | null }).subscription ?? null,
+            amountDue: invoice.amount_due,
+            currency: invoice.currency
+          }
+        });
+      }
+
       res.status(200).json({ ok: true, eventType: event.type });
     } catch (error) {
       console.error("[billing:webhook] unexpected processing error", {
@@ -651,6 +809,8 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
         eventType: event.type,
         error: (error as Error).message
       });
+
+      recordWebhookAttempt({ eventId: event.id, eventType: event.type, httpStatus: 500, errorCode: "internal_error" });
 
       if (
         event.type !== "checkout.session.completed" &&
@@ -673,6 +833,34 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
 
         res.status(200).json({ ok: true, skipped: true });
         return;
+      }
+
+      const fiveXxThreshold = getPositiveIntEnv("BILLING_ALERT_WEBHOOK_5XX_THRESHOLD", DEFAULT_ALERT_5XX_THRESHOLD);
+      const fiveXxWindowSec = getPositiveIntEnv("BILLING_ALERT_WEBHOOK_5XX_WINDOW_SEC", DEFAULT_ALERT_5XX_WINDOW_SEC);
+      const consecutiveThreshold = getPositiveIntEnv(
+        "BILLING_ALERT_WEBHOOK_CONSECUTIVE_FAILURES",
+        DEFAULT_ALERT_CONSECUTIVE_FAILURES
+      );
+
+      const fiveXxCount = countWebhookStatuses(500, 599, fiveXxWindowSec);
+      if (fiveXxCount >= fiveXxThreshold) {
+        emitAlert({
+          title: "Webhook 5xx failures",
+          level: "critical",
+          source: "billing-webhook",
+          message: "Webhook endpoint returned repeated 5xx responses.",
+          details: { count: fiveXxCount, threshold: fiveXxThreshold, windowSec: fiveXxWindowSec }
+        });
+      }
+
+      if (hasConsecutiveWebhookFailures(consecutiveThreshold)) {
+        emitAlert({
+          title: "Consecutive webhook failures",
+          level: "critical",
+          source: "billing-webhook",
+          message: "Webhook endpoint has consecutive failures and may be degraded.",
+          details: { threshold: consecutiveThreshold, eventType: event.type, eventId: event.id }
+        });
       }
 
       res.status(500).json({ ok: false, error: "internal_error" });

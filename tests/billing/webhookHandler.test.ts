@@ -78,6 +78,7 @@ describe("webhookHandler", () => {
   let server;
   let stripe;
   let createCheckoutSession;
+  let alerts;
 
   beforeEach(async () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "billing-webhook-test-"));
@@ -89,10 +90,14 @@ describe("webhookHandler", () => {
     process.env.BILLING_PORTAL_RETURN_URL = "https://managed.example.com/billing";
     process.env.BILLING_PORTAL_RATE_LIMIT_MAX = "10";
     process.env.BILLING_WEBHOOK_RATE_LIMIT_MAX = "120";
+    process.env.BILLING_ALERT_WEBHOOK_4XX_THRESHOLD = "5";
+    process.env.BILLING_ALERT_WEBHOOK_5XX_THRESHOLD = "3";
+    process.env.BILLING_ALERT_WEBHOOK_CONSECUTIVE_FAILURES = "3";
 
     runBillingMigrations();
 
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    alerts = [];
     createCheckoutSession = async ({ clientId }) => ({
       url: `https://checkout.stripe.test/${clientId}`,
       sessionId: `cs_${clientId}`,
@@ -105,7 +110,10 @@ describe("webhookHandler", () => {
       createPortalSession: async (stripeCustomerId, returnUrl) => {
         return `${returnUrl}?customer=${stripeCustomerId}`;
       },
-      createCheckoutSession
+      createCheckoutSession,
+      alertNotifier: async (alert) => {
+        alerts.push(alert);
+      }
     });
     server = app.listen(0);
     await new Promise((resolve) => server.once("listening", () => resolve()));
@@ -121,6 +129,9 @@ describe("webhookHandler", () => {
     delete process.env.BILLING_PORTAL_RETURN_URL;
     delete process.env.BILLING_PORTAL_RATE_LIMIT_MAX;
     delete process.env.BILLING_WEBHOOK_RATE_LIMIT_MAX;
+    delete process.env.BILLING_ALERT_WEBHOOK_4XX_THRESHOLD;
+    delete process.env.BILLING_ALERT_WEBHOOK_5XX_THRESHOLD;
+    delete process.env.BILLING_ALERT_WEBHOOK_CONSECUTIVE_FAILURES;
     fs.rmSync(root, { recursive: true, force: true });
   });
 
@@ -198,6 +209,9 @@ describe("webhookHandler", () => {
       stripeClient: stripe,
       createPortalSession: async (stripeCustomerId, returnUrl) => {
         return `${returnUrl}?customer=${stripeCustomerId}`;
+      },
+      alertNotifier: async (alert) => {
+        alerts.push(alert);
       }
     });
     server = app.listen(0);
@@ -251,6 +265,9 @@ describe("webhookHandler", () => {
       stripeClient: stripe,
       createPortalSession: async (stripeCustomerId, returnUrl) => {
         return `${returnUrl}?customer=${stripeCustomerId}`;
+      },
+      alertNotifier: async (alert) => {
+        alerts.push(alert);
       }
     });
     server = app.listen(0);
@@ -382,5 +399,37 @@ describe("webhookHandler", () => {
 
     const res = await post(address.port, payload, signature);
     assert.equal(res.status, 200);
+  });
+
+  it("emits immediate alert for invoice.payment_failed", async () => {
+    const evt = {
+      id: "evt_failed_1",
+      object: "event",
+      type: "invoice.payment_failed",
+      data: {
+        object: {
+          id: "in_failed_1",
+          object: "invoice",
+          customer: "cus_failed_1",
+          subscription: "sub_failed_1",
+          amount_due: 500,
+          currency: "usd"
+        }
+      }
+    };
+
+    const payload = JSON.stringify(evt);
+    const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: process.env.STRIPE_WEBHOOK_SECRET });
+
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port");
+
+    const res = await post(address.port, payload, signature);
+    assert.equal(res.status, 200);
+
+    const invoiceAlert = alerts.find((item) => item.title === "Invoice payment failed");
+    assert.ok(invoiceAlert);
+    assert.equal(invoiceAlert.level, "critical");
+    assert.equal(invoiceAlert.source, "billing-webhook");
   });
 });

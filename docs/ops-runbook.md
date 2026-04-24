@@ -424,29 +424,91 @@ Rollout exit criteria:
 ### Deployment
 
 - Platform: Railway
-- URL: https://billing-webhook-production.up.railway.app
-- Webhook: https://billing-webhook-production.up.railway.app/api/webhooks/stripe
-- Health: https://billing-webhook-production.up.railway.app/health -> 200 OK
+- URL: <https://billing-webhook-production.up.railway.app>
+- Webhook: <https://billing-webhook-production.up.railway.app/api/webhooks/stripe>
+- Health: <https://billing-webhook-production.up.railway.app/health> -> 200 OK
 
 ### Stripe Dashboard
 
 - Destination name: production-billing-webhook
 - API version: 2025-04-30.basil
-- Events: checkout, subscriptions, invoices
+- Events (subscribed):
+  - checkout.session.completed
+  - invoice.paid
+  - invoice.payment_failed
+  - customer.subscription.updated
+  - customer.subscription.deleted
+  - customer.subscription.created
 
 ### Environment Variables (Railway)
 
 - STRIPE_SECRET_KEY: sk_live_...
 - STRIPE_WEBHOOK_SECRET: whsec_live_...
-- BILLING_PORTAL_RETURN_URL: https://billing-webhook-production.up.railway.app/return
+- BILLING_PORTAL_RETURN_URL: <https://billing-webhook-production.up.railway.app/return>
 - BILLING_PORTAL_API_TOKEN: [secure token]
 - NODE_ENV: production
+- BILLING_TRUST_PROXY: 1  # required; avoids ERR_ERL_UNEXPECTED_X_FORWARDED_FOR behind Railway proxy
 
 ### Validation
 
 - Local: 12/12 tests passing
 - Production health check: 200 OK
 - Webhook endpoint: live and responding
+
+### v1.1.1 Production Validation (2026-04-24)
+
+- Flow: one-time checkout (mode=payment)
+- Event: checkout.session.completed -> 200 OK (evt_1TPbopG8p0q8xBb0D8Qgpcc8)
+- Payment: $0.50 USD, livemode=true, status=complete, payment_status=paid
+- Charge: amount_captured=50, outcome=authorized, network_status=approved_by_network
+- Metadata: client_id propagated through checkout session -> webhook handler
+- Release tag: v1.1.1
+
+### Stripe webhook failure triage
+
+1. Check Stripe Dashboard -> Developers -> Webhooks -> Event deliveries.
+1. Confirm endpoint URL matches production exactly: <https://billing-webhook-production.up.railway.app/api/webhooks/stripe>.
+1. Confirm Railway secret matches the active live endpoint secret: STRIPE_WEBHOOK_SECRET=whsec_live_....
+1. Confirm service health endpoint returns 200: GET <https://billing-webhook-production.up.railway.app/health>.
+1. Check recent service logs: `railway logs --service billing-webhook --lines 200`.
+1. If signature verification fails, check live vs test secret mismatch and whether the endpoint was recreated without updating Railway.
+1. If delivery failed temporarily, resend the failed event from Stripe Dashboard and verify idempotent handling avoids duplicate side effects.
+1. If proxy or rate-limit errors appear, confirm BILLING_TRUST_PROXY=1 is set in Railway.
+
+### Minimal billing alerts (v1)
+
+Configure at least one immediate channel:
+
+- BILLING_ALERT_WEBHOOK_URL=<https://hooks.slack.com/...> (or Discord webhook URL)
+- BILLING_ALERT_EMAIL_TO=ops@example[dot]com,security@example[dot]com
+- BILLING_ALERT_EMAIL_FROM=billing-alerts@example[dot]com
+
+Optional SMTP settings for email delivery:
+
+- SMTP_HOST=smtp.example.com
+- SMTP_PORT=587
+- SMTP_USER=...
+- SMTP_PASS=...
+
+Alert thresholds (defaults shown):
+
+- BILLING_ALERT_WEBHOOK_5XX_THRESHOLD=3
+- BILLING_ALERT_WEBHOOK_5XX_WINDOW_SEC=600
+- BILLING_ALERT_WEBHOOK_4XX_THRESHOLD=5
+- BILLING_ALERT_WEBHOOK_4XX_WINDOW_SEC=900
+- BILLING_ALERT_WEBHOOK_CONSECUTIVE_FAILURES=3
+- BILLING_ALERT_COOLDOWN_SEC=600
+
+Health-check alert settings:
+
+- BILLING_HEALTHCHECK_URL=<https://billing-webhook-production.up.railway.app/health>
+- BILLING_HEALTH_ALERT_CONSECUTIVE_FAILURES=2
+- BILLING_HEALTH_ALERT_STATE_PATH=data/billing-health-alert-state.json
+
+Operational commands:
+
+- npm run billing:health-alert
+- npm run billing:daily-summary
 
 ### Failure drill: jobs stuck in `inprogress/`
 
