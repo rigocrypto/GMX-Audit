@@ -537,6 +537,51 @@ Action:
 3. Requeue manually by moving the JSON back to `outputs/billing-queue/jobs/`.
 4. Reset `attempts` only if you are intentionally retrying after fixing the underlying issue.
 
+### Nested repo fork workflow
+
+The following nested repos are configured to push to personal fork remotes (`myfork`) instead of upstream org remotes:
+
+- `init-capital-contracts`
+- `whitechain-bridge`
+
+This is required because upstream org remotes do not currently grant direct write access.
+
+#### Verify tracking and remotes
+
+```bash
+git -C init-capital-contracts status -sb
+git -C init-capital-contracts remote -v
+git -C whitechain-bridge status -sb
+git -C whitechain-bridge remote -v
+```
+
+Expected:
+
+- branch tracks `myfork/main`
+- default pushes go to `myfork`
+
+#### Recovery path
+
+If push fails with `403` or `repository not found`:
+
+1. Confirm the fork exists on GitHub.
+2. Confirm `myfork` remote URL is correct.
+3. Re-run:
+
+```bash
+git -C <repo> branch --set-upstream-to=myfork/main main
+git -C <repo> config remote.pushDefault myfork
+```
+
+#### Backup patch files
+
+The following patch files were created as a safety backup for previously blocked nested commits:
+
+- `init-capital-contracts-b27d952.patch`
+- `whitechain-bridge-797e77a.patch`
+
+Keep them until fork pushes are confirmed and collaborators no longer need recovery artifacts. After that, they may be archived or deleted.
+
 ## QA Checklist
 
 - [ ] Command completed successfully.
