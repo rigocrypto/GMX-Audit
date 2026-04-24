@@ -1,0 +1,33 @@
+# Heavy local artifacts and generated outputs
+artifacts/
+cache/
+outputs/
+proof-packages/
+exploit-proofs/
+
+# Vendored / external large trees not needed for billing webhook runtime
+gmx-synthetics/
+gmx-synthetics.worktrees/
+lib/
+moonwell-contracts-v2/
+
+# Dev/test/docs assets not required at runtime
+test/
+tests/
+examples/
+docs/
+auditors/
+
+# Build and local environment
+node_modules/
+.venv/
+
+# Logs and captures
+*.out.txt
+*.log
+*.tmp
+
+# VCS and editor files
+.git/
+.github/
+.vscode/

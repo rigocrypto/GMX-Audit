@@ -316,6 +316,7 @@ function handleCheckoutSessionCompleted(event: StripeEvent): number | undefined 
 
 function handleInvoicePaid(event: StripeEvent): number | undefined {
   const invoice = event.data.object as Stripe.Invoice;
+  const invoiceWithSubscription = invoice as Stripe.Invoice & { subscription?: string | null };
   const stripeCustomerId = typeof invoice.customer === "string" ? invoice.customer : undefined;
   if (!stripeCustomerId) return undefined;
 
@@ -326,7 +327,8 @@ function handleInvoicePaid(event: StripeEvent): number | undefined {
   const periodEnd = line?.period?.end ? new Date(line.period.end * 1000).toISOString() : undefined;
 
   updateBillingStatus(accountId, "active", {
-    stripeSubscriptionId: typeof invoice.subscription === "string" ? invoice.subscription : undefined,
+    stripeSubscriptionId:
+      typeof invoiceWithSubscription.subscription === "string" ? invoiceWithSubscription.subscription : undefined,
     stripePriceId: priceId,
     plan: inferPlanFromPriceId(priceId),
     currentPeriodStart: periodStart,
@@ -365,6 +367,10 @@ function handleInvoicePaymentFailed(event: StripeEvent): number | undefined {
 
 function handleSubscriptionUpdated(event: StripeEvent): number | undefined {
   const sub = event.data.object as Stripe.Subscription;
+  const subWithPeriods = sub as Stripe.Subscription & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
   const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : undefined;
   if (!stripeCustomerId) return undefined;
 
@@ -376,10 +382,12 @@ function handleSubscriptionUpdated(event: StripeEvent): number | undefined {
     stripeSubscriptionId: sub.id,
     stripePriceId: priceId,
     plan: inferPlanFromPriceId(priceId),
-    currentPeriodStart: sub.current_period_start
-      ? new Date(sub.current_period_start * 1000).toISOString()
+    currentPeriodStart: subWithPeriods.current_period_start
+      ? new Date(subWithPeriods.current_period_start * 1000).toISOString()
       : undefined,
-    currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : undefined,
+    currentPeriodEnd: subWithPeriods.current_period_end
+      ? new Date(subWithPeriods.current_period_end * 1000).toISOString()
+      : undefined,
     cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end)
   });
 
@@ -394,6 +402,7 @@ function handleSubscriptionUpdated(event: StripeEvent): number | undefined {
 
 function handleSubscriptionDeleted(event: StripeEvent): number | undefined {
   const sub = event.data.object as Stripe.Subscription;
+  const subWithPeriods = sub as Stripe.Subscription & { current_period_end?: number };
   const stripeCustomerId = typeof sub.customer === "string" ? sub.customer : undefined;
   if (!stripeCustomerId) return undefined;
 
@@ -405,7 +414,9 @@ function handleSubscriptionDeleted(event: StripeEvent): number | undefined {
     stripeSubscriptionId: sub.id,
     stripePriceId: priceId,
     plan: inferPlanFromPriceId(priceId),
-    currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : undefined,
+    currentPeriodEnd: subWithPeriods.current_period_end
+      ? new Date(subWithPeriods.current_period_end * 1000).toISOString()
+      : undefined,
     cancelAtPeriodEnd: Boolean(sub.cancel_at_period_end)
   });
 

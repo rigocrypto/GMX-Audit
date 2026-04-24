@@ -419,6 +419,35 @@ Rollout exit criteria:
 - `npm run manifest:roundtrip` passes.
 - `npm run metrics:test` passes.
 
+## Production Webhook - VALIDATED
+
+### Deployment
+
+- Platform: Railway
+- URL: https://billing-webhook-production.up.railway.app
+- Webhook: https://billing-webhook-production.up.railway.app/api/webhooks/stripe
+- Health: https://billing-webhook-production.up.railway.app/health -> 200 OK
+
+### Stripe Dashboard
+
+- Destination name: production-billing-webhook
+- API version: 2026-03-25.dahlia
+- Events: checkout, subscriptions, invoices
+
+### Environment Variables (Railway)
+
+- STRIPE_SECRET_KEY: sk_live_...
+- STRIPE_WEBHOOK_SECRET: whsec_live_...
+- BILLING_PORTAL_RETURN_URL: https://billing-webhook-production.up.railway.app/return
+- BILLING_PORTAL_API_TOKEN: [secure token]
+- NODE_ENV: production
+
+### Validation
+
+- Local: 12/12 tests passing
+- Production health check: 200 OK
+- Webhook endpoint: live and responding
+
 ### Failure drill: jobs stuck in `inprogress/`
 
 Symptoms:
