@@ -5,18 +5,23 @@ import Stripe from "stripe";
 import { openBillingDb } from "./db";
 import { createBillingPortalSession } from "./portal";
 import { getBillingAccount } from "./billingService";
+import { createOneTimeCheckoutSession, CreateOneTimeCheckoutInput, CreatedOneTimeCheckoutSession, markOneTimeCheckoutCompleted } from "./oneTimeCheckout";
 import { BillingPlan, BillingStatus } from "./types";
 
 type StripeEvent = Stripe.Event;
 type PortalSessionFactory = (stripeCustomerId: string, returnUrl: string, stripeClient: Stripe) => Promise<string>;
+type CheckoutSessionFactory = (input: CreateOneTimeCheckoutInput, stripeClient: Stripe) => Promise<CreatedOneTimeCheckoutSession>;
 
 type BillingAppOptions = {
   stripeClient?: Stripe;
   createPortalSession?: PortalSessionFactory;
+  createCheckoutSession?: CheckoutSessionFactory;
 };
 
 const DEFAULT_PORTAL_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_PORTAL_RATE_LIMIT_MAX = 10;
+const DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_MS = 60_000;
+const DEFAULT_CHECKOUT_RATE_LIMIT_MAX = 30;
 const DEFAULT_WEBHOOK_RATE_LIMIT_WINDOW_MS = 60_000;
 const DEFAULT_WEBHOOK_RATE_LIMIT_MAX = 120;
 
@@ -104,6 +109,16 @@ function createBillingPortalLimiter() {
   return rateLimit({
     windowMs: getPositiveIntEnv("BILLING_PORTAL_RATE_LIMIT_WINDOW_MS", DEFAULT_PORTAL_RATE_LIMIT_WINDOW_MS),
     max: getPositiveIntEnv("BILLING_PORTAL_RATE_LIMIT_MAX", DEFAULT_PORTAL_RATE_LIMIT_MAX),
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { ok: false, error: "rate_limited" }
+  });
+}
+
+function createBillingCheckoutLimiter() {
+  return rateLimit({
+    windowMs: getPositiveIntEnv("BILLING_CHECKOUT_RATE_LIMIT_WINDOW_MS", DEFAULT_CHECKOUT_RATE_LIMIT_WINDOW_MS),
+    max: getPositiveIntEnv("BILLING_CHECKOUT_RATE_LIMIT_MAX", DEFAULT_CHECKOUT_RATE_LIMIT_MAX),
     standardHeaders: true,
     legacyHeaders: false,
     message: { ok: false, error: "rate_limited" }
@@ -285,10 +300,28 @@ function upsertCustomerFields(stripeCustomerId: string, updates: { email?: strin
 
 function handleCheckoutSessionCompleted(event: StripeEvent): number | undefined {
   const session = event.data.object as Stripe.Checkout.Session;
+  const metadata = (session.metadata || {}) as Record<string, string>;
+
+  if (session.mode === "payment") {
+    const amountTotal = typeof session.amount_total === "number" ? session.amount_total : null;
+    const currency = typeof session.currency === "string" ? session.currency : null;
+    const clientId = metadata.client_id || session.id;
+
+    markOneTimeCheckoutCompleted({
+      clientId,
+      sessionId: session.id,
+      stripeCustomerId: typeof session.customer === "string" ? session.customer : undefined,
+      paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : undefined,
+      amountTotal,
+      currency
+    });
+
+    return undefined;
+  }
+
   const stripeCustomerId = typeof session.customer === "string" ? session.customer : undefined;
   if (!stripeCustomerId) return undefined;
 
-  const metadata = (session.metadata || {}) as Record<string, string>;
   const billingAccountId = findOrCreateBillingAccount(stripeCustomerId, {
     ...metadata,
     email: session.customer_details?.email || metadata.email || ""
@@ -456,7 +489,9 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
   const client = options.stripeClient ?? new Stripe(secret as string);
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const createPortalSession = options.createPortalSession ?? createBillingPortalSession;
+  const createCheckoutSession = options.createCheckoutSession ?? createOneTimeCheckoutSession;
   const billingPortalLimiter = createBillingPortalLimiter();
+  const billingCheckoutLimiter = createBillingCheckoutLimiter();
   const billingWebhookLimiter = createBillingWebhookLimiter();
 
   const app = express();
@@ -515,6 +550,50 @@ export function createBillingWebhookApp(input?: Stripe | BillingAppOptions): exp
         error: (error as Error).message
       });
       res.status(502).json({ ok: false, error: "billing_portal_unavailable" });
+    }
+  });
+
+  app.post("/api/billing/checkout-session", billingCheckoutLimiter, express.json(), async (req: Request, res: Response) => {
+    const clientId = typeof req.body?.clientId === "string" ? req.body.clientId.trim() : "";
+    const successUrl = typeof req.body?.successUrl === "string" ? req.body.successUrl.trim() : "";
+    const cancelUrl = typeof req.body?.cancelUrl === "string" ? req.body.cancelUrl.trim() : "";
+    const customerEmail = typeof req.body?.customerEmail === "string" ? req.body.customerEmail.trim() : undefined;
+    const productName = typeof req.body?.productName === "string" ? req.body.productName.trim() : undefined;
+    const currency = typeof req.body?.currency === "string" ? req.body.currency.trim() : undefined;
+    const unitAmount = typeof req.body?.unitAmount === "number" ? req.body.unitAmount : undefined;
+
+    if (!clientId || !successUrl || !cancelUrl) {
+      res.status(400).json({ ok: false, error: "missing_required_fields" });
+      return;
+    }
+
+    try {
+      const session = await createCheckoutSession(
+        {
+          clientId,
+          successUrl,
+          cancelUrl,
+          customerEmail,
+          productName,
+          currency,
+          unitAmount
+        },
+        client
+      );
+
+      res.status(200).json({
+        ok: true,
+        url: session.url,
+        sessionId: session.sessionId,
+        productId: session.productId,
+        priceId: session.priceId
+      });
+    } catch (error) {
+      console.error("[billing:checkout] failed to create checkout session", {
+        clientId,
+        error: (error as Error).message
+      });
+      res.status(502).json({ ok: false, error: "checkout_session_unavailable" });
     }
   });
 

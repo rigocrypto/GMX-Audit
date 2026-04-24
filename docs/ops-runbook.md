@@ -431,7 +431,7 @@ Rollout exit criteria:
 ### Stripe Dashboard
 
 - Destination name: production-billing-webhook
-- API version: 2026-03-25.dahlia
+- API version: 2025-04-30.basil
 - Events: checkout, subscriptions, invoices
 
 ### Environment Variables (Railway)

@@ -77,6 +77,7 @@ describe("webhookHandler", () => {
   let root;
   let server;
   let stripe;
+  let createCheckoutSession;
 
   beforeEach(async () => {
     root = fs.mkdtempSync(path.join(os.tmpdir(), "billing-webhook-test-"));
@@ -92,12 +93,19 @@ describe("webhookHandler", () => {
     runBillingMigrations();
 
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    createCheckoutSession = async ({ clientId }) => ({
+      url: `https://checkout.stripe.test/${clientId}`,
+      sessionId: `cs_${clientId}`,
+      productId: "prod_example",
+      priceId: "price_example"
+    });
 
     const app = createBillingWebhookApp({
       stripeClient: stripe,
       createPortalSession: async (stripeCustomerId, returnUrl) => {
         return `${returnUrl}?customer=${stripeCustomerId}`;
-      }
+      },
+      createCheckoutSession
     });
     server = app.listen(0);
     await new Promise((resolve) => server.once("listening", () => resolve()));
@@ -144,6 +152,41 @@ describe("webhookHandler", () => {
 
     const res = await postJson(address.port, "/api/billing/portal", { clientId: "portal-client" });
     assert.equal(res.status, 401);
+  });
+
+  it("creates a one-time checkout session", async () => {
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port");
+
+    const res = await postJson(
+      address.port,
+      "/api/billing/checkout-session",
+      {
+        clientId: "client-one-time",
+        successUrl: "https://example.com/success",
+        cancelUrl: "https://example.com/cancel",
+        customerEmail: "ops@example.com"
+      }
+    );
+
+    const body = JSON.parse(res.body);
+    assert.equal(res.status, 200);
+    assert.equal(body.ok, true);
+    assert.equal(body.url, "https://checkout.stripe.test/client-one-time");
+    assert.equal(body.sessionId, "cs_client-one-time");
+    assert.equal(body.productId, "prod_example");
+    assert.equal(body.priceId, "price_example");
+  });
+
+  it("rejects incomplete checkout session requests", async () => {
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port");
+
+    const res = await postJson(address.port, "/api/billing/checkout-session", {
+      clientId: "client-one-time"
+    });
+
+    assert.equal(res.status, 400);
   });
 
   it("rate limits repeated portal requests", async () => {
@@ -274,6 +317,54 @@ describe("webhookHandler", () => {
 
     assert.equal(account.billing_status, "active");
     assert.equal(events.c, 1);
+  });
+
+  it("records completed one-time payment checkouts without mutating subscription accounts", async () => {
+    const evt = {
+      id: "evt_checkout_paid_1",
+      object: "event",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_paid_1",
+          object: "checkout.session",
+          mode: "payment",
+          customer: "cus_one_time_123",
+          payment_intent: "pi_123",
+          amount_total: 2000,
+          currency: "usd",
+          metadata: {
+            client_id: "client-one-time"
+          }
+        }
+      }
+    };
+
+    const payload = JSON.stringify(evt);
+    const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: process.env.STRIPE_WEBHOOK_SECRET });
+
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("Missing test port");
+
+    const res = await post(address.port, payload, signature);
+    assert.equal(res.status, 200);
+
+    const db = openBillingDb();
+    const session = db
+      .prepare(
+        "SELECT client_id, stripe_customer_id, stripe_payment_intent_id, payment_status, amount_total, currency FROM billing_payment_sessions WHERE stripe_checkout_session_id = ?"
+      )
+      .get("cs_paid_1");
+    const account = db.prepare("SELECT COUNT(*) as c FROM billing_accounts WHERE stripe_customer_id = ?").get("cus_one_time_123");
+    db.close();
+
+    assert.equal(session.client_id, "client-one-time");
+    assert.equal(session.stripe_customer_id, "cus_one_time_123");
+    assert.equal(session.stripe_payment_intent_id, "pi_123");
+    assert.equal(session.payment_status, "paid");
+    assert.equal(session.amount_total, 2000);
+    assert.equal(session.currency, "usd");
+    assert.equal(account.c, 0);
   });
 
   it("accepts unknown events with 200", async () => {

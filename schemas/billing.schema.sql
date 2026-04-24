@@ -97,3 +97,40 @@ CREATE TABLE IF NOT EXISTS provisioning_log (
 
 CREATE INDEX IF NOT EXISTS idx_provisioning_log_billing_account_id
   ON provisioning_log(billing_account_id);
+
+CREATE TABLE IF NOT EXISTS stripe_catalog_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  catalog_key TEXT NOT NULL UNIQUE,
+  stripe_product_id TEXT NOT NULL,
+  stripe_price_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  currency TEXT NOT NULL,
+  unit_amount INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_stripe_catalog_items_catalog_key
+  ON stripe_catalog_items(catalog_key);
+
+CREATE TABLE IF NOT EXISTS billing_payment_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id TEXT NOT NULL,
+  stripe_checkout_session_id TEXT NOT NULL UNIQUE,
+  stripe_customer_id TEXT,
+  stripe_product_id TEXT,
+  stripe_price_id TEXT,
+  stripe_payment_intent_id TEXT,
+  payment_status TEXT NOT NULL,
+  amount_total INTEGER,
+  currency TEXT,
+  completed_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_billing_payment_sessions_client_id
+  ON billing_payment_sessions(client_id);
+
+CREATE INDEX IF NOT EXISTS idx_billing_payment_sessions_checkout_session_id
+  ON billing_payment_sessions(stripe_checkout_session_id);
