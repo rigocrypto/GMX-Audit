@@ -11,8 +11,8 @@ interface LandingProps {
 }
 
 function HeroSection() {
-  const heroVideoSrc = '/hero-preview.mp4';
-  const heroImageSrc = '/Bounty-rotation.jpeg';
+  const heroVideoSrc = `${import.meta.env.BASE_URL}hero-preview.mp4`;
+  const heroImageSrc = `${import.meta.env.BASE_URL}Bounty-rotation.jpeg`;
   const [hasHeroVideo, setHasHeroVideo] = useState(true);
 
   return (
