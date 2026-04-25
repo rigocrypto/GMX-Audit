@@ -55,9 +55,8 @@ jobs:
       - name: Bundle sample dashboard
         shell: bash
         run: |
-          mkdir -p dist/dashboard
-          cp -R examples/sample-dashboard/. dist/dashboard/
-        working-directory: ${{ github.workspace }}
+          mkdir -p GMX-Landing-page/GMX-Audit/project/dist/dashboard
+          cp -R examples/sample-dashboard/. GMX-Landing-page/GMX-Audit/project/dist/dashboard/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
