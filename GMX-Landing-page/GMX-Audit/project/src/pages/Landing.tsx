@@ -4,7 +4,7 @@ import {
   CheckCircle, ChevronDown, ChevronUp, Mail, ArrowRight,
   Terminal, Lock, BarChart2, Zap, Users, Server
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
@@ -528,6 +528,12 @@ function LeadCaptureSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+
+    if (!isSupabaseConfigured || !supabase) {
+      setStatus('error');
+      return;
+    }
+
     setStatus('loading');
 
     const { error } = await supabase.from('lead_captures').insert({ email, company });
