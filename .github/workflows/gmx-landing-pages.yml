@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - 'GMX-Landing-page/GMX-Audit/project/**'
+      - 'examples/sample-dashboard/**'
+      - 'README.md'
       - '.github/workflows/gmx-landing-pages.yml'
   workflow_dispatch:
 
@@ -28,6 +30,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -44,6 +51,13 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: npm run build
+
+      - name: Bundle sample dashboard
+        shell: bash
+        run: |
+          mkdir -p dist/dashboard
+          cp -R examples/sample-dashboard/. dist/dashboard/
+        working-directory: ${{ github.workspace }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
