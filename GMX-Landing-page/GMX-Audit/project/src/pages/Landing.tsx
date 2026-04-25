@@ -11,6 +11,9 @@ interface LandingProps {
 }
 
 function HeroSection() {
+  const heroVideoSrc = '/hero-preview.mp4';
+  const [hasHeroVideo, setHasHeroVideo] = useState(true);
+
   return (
     <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
       <div className="absolute inset-0 bg-[#050d1a]">
@@ -66,8 +69,28 @@ function HeroSection() {
           </div>
 
           <div className="relative lg:flex justify-end hidden">
-            <div className="relative w-full max-w-lg">
+            <div className="relative w-full max-w-lg space-y-6">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0ea5e9]/30 to-[#10b981]/30 rounded-2xl blur-lg opacity-60" />
+
+              {hasHeroVideo && (
+                <div className="relative rounded-2xl overflow-hidden border border-[#1a2f4a] shadow-2xl bg-[#050d1a]">
+                  <video
+                    src={heroVideoSrc}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    controls
+                    onError={() => setHasHeroVideo(false)}
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#050d1a]/40 via-transparent to-transparent" />
+                  <div className="absolute top-3 left-3 bg-[#0ea5e9] text-white text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider uppercase">
+                    Video Preview
+                  </div>
+                </div>
+              )}
+
               <div className="relative rounded-2xl overflow-hidden border border-[#1a2f4a] shadow-2xl">
                 <img
                   src="./Bounty-rotation.jpeg"
