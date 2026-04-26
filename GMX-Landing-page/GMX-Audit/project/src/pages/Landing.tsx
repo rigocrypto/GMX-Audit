@@ -22,9 +22,9 @@ function HeroSection() {
         <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 bg-gradient-to-l from-[#0ea5e9]/10 to-transparent" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      <div className="relative mx-auto w-full max-w-[90rem] px-3 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-[380px]:gap-2 sm:gap-8 lg:gap-12 items-start lg:items-center py-1 max-[380px]:py-0 sm:py-14 lg:py-24 justify-center lg:justify-start">
-          <div className="w-full lg:max-w-xl flex flex-col items-center lg:items-start">
+          <div className="w-full lg:max-w-2xl flex flex-col items-center lg:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0ea5e9]/10 border border-[#0ea5e9]/30 text-[#0ea5e9] text-xs font-medium mb-2 sm:mb-6 uppercase tracking-wider">
               <Activity className="w-3 h-3" />
               Security Monitoring &amp; Engineering Operations
@@ -67,7 +67,7 @@ function HeroSection() {
           </div>
 
           <div className="relative flex justify-center lg:justify-end mt-1 max-[380px]:mt-0 sm:mt-8 lg:mt-0 w-full">
-            <div className="relative w-full sm:max-w-md lg:max-w-lg space-y-3 sm:space-y-6">
+            <div className="relative w-full sm:max-w-xl lg:max-w-2xl space-y-3 sm:space-y-6">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0ea5e9]/30 to-[#10b981]/30 rounded-2xl blur-lg opacity-60" />
 
               {hasHeroVideo && (
