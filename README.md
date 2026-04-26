@@ -187,7 +187,7 @@ You care about operational reliability:
 
 ![How It Works Dashboard](docs/assets/Bounty-rotation.jpeg)
 
-[Watch the product presentation video](https://rigocrypto.github.io/bounty-rotation-harness/presentation.html)
+[Watch the product presentation video](https://rigocrypto.github.io/bounty-rotation-harness/)
 
 1. Run deterministic fork execution at historical blocks (archive RPC required).
 2. Execute invariant suites and exploit-search checks.
