@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Shield, Activity, GitBranch, Bell, FileText, Search,
   CheckCircle, ChevronDown, ChevronUp, Mail, ArrowRight,
@@ -684,7 +684,160 @@ function ContactSection() {
   );
 }
 
+function SiteFooter() {
+  return (
+    <footer className="border-t border-[#1a2f4a] bg-[#030810] py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-[#475569] text-xs">© 2026 GMX Audit Control Center. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-xs text-[#94a3b8]">
+            <a href="#/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#/terms" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="#contact" className="hover:text-white transition-colors">Support</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+type LegalPageType = 'privacy' | 'terms';
+
+function LegalPage({ page, onNavigate }: { page: LegalPageType; onNavigate: (page: string) => void }) {
+  const title = page === 'privacy' ? 'Privacy Policy' : 'Terms of Service';
+
+  return (
+    <section className="min-h-screen bg-[#050d1a] pt-24 pb-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <a
+            href="#"
+            onClick={() => {
+              onNavigate('home');
+              window.location.hash = '';
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="inline-flex items-center gap-2 text-[#0ea5e9] hover:text-[#38bdf8] text-sm"
+          >
+            <ArrowRight className="w-4 h-4 rotate-180" />
+            Back to Home
+          </a>
+        </div>
+
+        <div className="rounded-2xl border border-[#1a2f4a] bg-[#0a1628] p-6 sm:p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">{title}</h1>
+          <p className="text-[#64748b] text-sm mb-8">Last updated: April 26, 2026</p>
+
+          {page === 'privacy' ? (
+            <div className="space-y-7 text-[#cbd5e1] text-sm leading-relaxed">
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Information We Collect</h2>
+                <p>
+                  We collect information you submit through our contact and request forms, including name, email address,
+                  and company/team name. We also collect operational analytics required to maintain service reliability and
+                  security.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">How We Use Information</h2>
+                <p>
+                  We use submitted data to respond to inquiries, scope engagements, deliver updates, and provide digital
+                  engineering/security support services. We do not sell personal data.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Data Sharing</h2>
+                <p>
+                  We may share data with essential service providers used for operations (for example, hosting,
+                  communications, and payment processing) under appropriate confidentiality and security controls.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Data Retention</h2>
+                <p>
+                  We retain data only as long as needed to operate services, meet legal obligations, and resolve disputes.
+                  You can request removal of your contact data by emailing us.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Contact</h2>
+                <p>
+                  For privacy requests, email <a className="text-[#0ea5e9] hover:text-[#38bdf8]" href="mailto:rigovivas71@gmail.com">rigovivas71@gmail.com</a>.
+                </p>
+              </section>
+            </div>
+          ) : (
+            <div className="space-y-7 text-[#cbd5e1] text-sm leading-relaxed">
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Service Scope</h2>
+                <p>
+                  GMX Audit Control Center provides digital B2B engineering and security support services, including CI
+                  monitoring, regression coverage, alerting, issue triage, and audit-oriented operational support.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Billing</h2>
+                <p>
+                  Recurring plans are billed monthly through Stripe unless otherwise agreed in writing. One-time scoped
+                  engagements are invoiced or charged per agreed terms.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Refund Policy</h2>
+                <p>
+                  Monthly service fees are generally non-refundable once a billing cycle begins and service capacity has
+                  been allocated. If a billing error occurs, contact us within 14 days and we will review and correct valid
+                  overcharges. For one-time engagements, refund eligibility depends on the signed scope and delivery status.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Limitation of Liability</h2>
+                <p>
+                  Services are provided on a best-effort basis for operational support and do not constitute legal,
+                  investment, or insurance guarantees. Liability is limited to the amount paid for services in the prior
+                  three months, to the extent permitted by law.
+                </p>
+              </section>
+              <section>
+                <h2 className="text-white text-lg font-semibold mb-2">Contact</h2>
+                <p>
+                  For terms questions, email <a className="text-[#0ea5e9] hover:text-[#38bdf8]" href="mailto:rigovivas71@gmail.com">rigovivas71@gmail.com</a>.
+                </p>
+              </section>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function getLegalRouteFromHash(hash: string): LegalPageType | null {
+  const value = hash.toLowerCase();
+  if (value.startsWith('#/privacy')) return 'privacy';
+  if (value.startsWith('#/terms')) return 'terms';
+  return null;
+}
+
 export default function Landing({ onNavigate }: LandingProps) {
+  const [legalPage, setLegalPage] = useState<LegalPageType | null>(() =>
+    typeof window === 'undefined' ? null : getLegalRouteFromHash(window.location.hash)
+  );
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      setLegalPage(getLegalRouteFromHash(window.location.hash));
+    };
+
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  if (legalPage) {
+    return <LegalPage page={legalPage} onNavigate={onNavigate} />;
+  }
+
   return (
     <>
       <HeroSection />
@@ -696,6 +849,7 @@ export default function Landing({ onNavigate }: LandingProps) {
       <FAQSection />
       <LeadCaptureSection />
       <ContactSection />
+      <SiteFooter />
     </>
   );
 }
