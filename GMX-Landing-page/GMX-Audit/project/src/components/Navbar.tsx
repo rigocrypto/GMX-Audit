@@ -38,13 +38,13 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-[#050d1a]/95 backdrop-blur-sm border-b border-[#1a2f4a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14 md:h-16">
           <button
             onClick={handleHomeClick}
             className="flex items-center gap-2 text-white hover:text-[#0ea5e9] transition-colors"
           >
-            <Shield className="w-6 h-6 text-[#0ea5e9]" />
-            <span className="font-bold text-sm tracking-wider uppercase">GMX Audit</span>
+            <Shield className="w-5 h-5 md:w-6 md:h-6 text-[#0ea5e9]" />
+            <span className="font-bold text-xs md:text-sm tracking-wider uppercase">GMX Audit</span>
           </button>
 
           <div className="hidden md:flex items-center gap-6">
@@ -81,13 +81,13 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
             className="md:hidden text-[#94a3b8] hover:text-white"
             onClick={() => setMobileOpen(!mobileOpen)}
           >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden bg-[#050d1a] border-b border-[#1a2f4a] px-4 py-4 flex flex-col gap-4">
+        <div className="md:hidden bg-[#050d1a] border-b border-[#1a2f4a] px-4 py-3 flex flex-col gap-3">
           {navLinks.map((link) => (
             <a
               key={link.label}

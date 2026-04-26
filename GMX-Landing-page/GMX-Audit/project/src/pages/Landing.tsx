@@ -16,61 +16,58 @@ function HeroSection() {
   const [hasHeroVideo, setHasHeroVideo] = useState(true);
 
   return (
-    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
+    <section className="relative min-h-[auto] lg:min-h-screen flex items-start lg:items-center pt-7 max-[380px]:pt-4 sm:pt-14 lg:pt-16 overflow-hidden">
       <div className="absolute inset-0 bg-[#050d1a]">
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: `linear-gradient(rgba(14, 165, 233, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(14, 165, 233, 0.3) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px'
-        }} />
+        <div className="absolute inset-0 opacity-5 bg-[linear-gradient(rgba(14,165,233,0.3)_1px,transparent_1px),linear-gradient(90deg,rgba(14,165,233,0.3)_1px,transparent_1px)] bg-[length:60px_60px]" />
         <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 bg-gradient-to-l from-[#0ea5e9]/10 to-transparent" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-16 lg:py-24">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0ea5e9]/10 border border-[#0ea5e9]/30 text-[#0ea5e9] text-xs font-medium mb-6 uppercase tracking-wider">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-[380px]:gap-2 sm:gap-8 lg:gap-12 items-start lg:items-center py-1 max-[380px]:py-0 sm:py-14 lg:py-24">
+          <div className="max-w-xl lg:max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0ea5e9]/10 border border-[#0ea5e9]/30 text-[#0ea5e9] text-xs font-medium mb-2 sm:mb-6 uppercase tracking-wider">
               <Activity className="w-3 h-3" />
               Security Monitoring &amp; Engineering Operations
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+            <h1 className="text-[2.2rem] sm:text-5xl lg:text-6xl font-bold text-white leading-[1.03] mb-2 sm:mb-6">
               GMX Audit<br />
               <span className="text-[#0ea5e9]">Control Center</span>
             </h1>
 
-            <p className="text-lg text-[#94a3b8] mb-4 leading-relaxed">
+            <p className="text-base sm:text-lg text-[#94a3b8] mb-2 sm:mb-4 leading-relaxed max-w-lg">
               Security monitoring, CI coverage, and regression support for teams shipping critical infrastructure.
             </p>
 
-            <p className="text-[#64748b] mb-10 leading-relaxed text-sm max-w-lg">
+            <p className="text-[#64748b] mb-4 sm:mb-10 leading-relaxed text-sm max-w-none sm:max-w-lg">
               GMX Audit Control Center helps engineering and protocol teams improve release confidence with monitoring, CI validation, regression coverage, and audit-oriented operational support. We provide digital security and engineering support services for teams that need reliable release controls, faster issue detection, and clearer operational visibility.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 max-[380px]:gap-1.5 sm:gap-3">
               <a
                 href="#pricing"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-[#0ea5e9]/20"
+                className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-[#0ea5e9]/20"
               >
                 View Plans
                 <ArrowRight className="w-4 h-4" />
               </a>
               <a
                 href="#lead-capture"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-[#0a1628] text-white font-medium rounded-lg border border-[#1a2f4a] hover:border-[#0ea5e9]/50 transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-transparent hover:bg-[#0a1628] text-white font-medium rounded-lg border border-[#1a2f4a] hover:border-[#0ea5e9]/50 transition-all duration-200"
               >
                 Request Access
               </a>
               <a
                 href="#contact"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent hover:bg-[#0a1628] text-[#94a3b8] hover:text-white font-medium rounded-lg transition-all duration-200"
+                className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-transparent hover:bg-[#0a1628] text-[#94a3b8] hover:text-white font-medium rounded-lg transition-all duration-200"
               >
                 Contact Us
               </a>
             </div>
           </div>
 
-          <div className="relative flex justify-center lg:justify-end mt-10 lg:mt-0">
-            <div className="relative w-full max-w-sm sm:max-w-md lg:max-w-lg space-y-6">
+          <div className="relative flex justify-center lg:justify-end mt-1 max-[380px]:mt-0 sm:mt-8 lg:mt-0">
+            <div className="relative w-[calc(100%+1.5rem)] -mx-3 max-[380px]:w-[calc(100%+2.5rem)] max-[380px]:-mx-5 max-w-none sm:mx-0 sm:w-full sm:max-w-md lg:max-w-lg space-y-3 sm:space-y-6">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0ea5e9]/30 to-[#10b981]/30 rounded-2xl blur-lg opacity-60" />
 
               {hasHeroVideo && (
@@ -83,7 +80,7 @@ function HeroSection() {
                     playsInline
                     controls
                     onError={() => setHasHeroVideo(false)}
-                    className="w-full max-h-64 sm:max-h-80 lg:max-h-none h-auto object-cover"
+                    className="w-full h-[16rem] max-[380px]:h-[17.5rem] sm:max-h-80 lg:max-h-none sm:h-auto object-cover"
                   />
                   <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#050d1a]/40 via-transparent to-transparent" />
                   <div className="absolute top-3 left-3 bg-[#0ea5e9] text-white text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider uppercase">
@@ -96,7 +93,7 @@ function HeroSection() {
                 <img
                   src={heroImageSrc}
                   alt="GMX Audit Security Dashboard"
-                  className="w-full max-h-64 sm:max-h-80 lg:max-h-none h-auto object-cover"
+                  className="w-full h-[16.5rem] max-[380px]:h-[18rem] sm:max-h-80 lg:max-h-none sm:h-auto object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a]/60 via-transparent to-transparent" />
               </div>
@@ -121,13 +118,13 @@ function TrustBand() {
   ];
 
   return (
-    <section className="border-y border-[#1a2f4a] bg-[#030810] py-6">
+    <section className="border-y border-[#1a2f4a] bg-[#030810] py-3 sm:py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-12">
           {labels.map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-[#475569] hover:text-[#64748b] transition-colors">
+            <div key={i} className="flex items-center gap-1.5 sm:gap-2 text-[#475569] hover:text-[#64748b] transition-colors">
               <span className="text-[#1a2f4a]">{item.icon}</span>
-              <span className="text-xs font-medium tracking-wider uppercase">{item.label}</span>
+              <span className="text-[11px] sm:text-xs font-medium tracking-wider uppercase">{item.label}</span>
             </div>
           ))}
         </div>
@@ -171,11 +168,11 @@ function WhatWeOffer() {
   ];
 
   return (
-    <section id="services" className="py-24 bg-[#050d1a]">
+    <section id="services" className="py-16 sm:py-20 lg:py-24 bg-[#050d1a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-2xl mb-14">
+        <div className="max-w-2xl mb-10 sm:mb-14">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">What We Offer</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <h2 className="text-[1.85rem] sm:text-4xl font-bold text-white mb-3 sm:mb-4">
             Continuous monitoring and engineering assurance
           </h2>
           <p className="text-[#64748b] leading-relaxed">
@@ -198,7 +195,7 @@ function WhatWeOffer() {
           ))}
         </div>
 
-        <p className="mt-10 text-center text-[#475569] text-sm">
+        <p className="mt-8 sm:mt-10 text-center text-[#475569] text-sm">
           All services are delivered digitally for engineering, protocol, and infrastructure teams.
         </p>
       </div>
@@ -290,11 +287,11 @@ function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="py-24 bg-[#030810]">
+    <section id="pricing" className="py-16 sm:py-20 lg:py-24 bg-[#030810]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">Pricing</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Plans and Engagements</h2>
+          <h2 className="text-[1.85rem] sm:text-4xl font-bold text-white mb-3 sm:mb-4">Plans and Engagements</h2>
           <p className="text-[#64748b]">Choose a recurring plan or request a scoped one-time engagement. All services are delivered digitally.</p>
         </div>
 
@@ -379,11 +376,11 @@ function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-24 bg-[#050d1a]">
+    <section id="how-it-works" className="py-16 sm:py-20 lg:py-24 bg-[#050d1a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">Process</p>
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How Delivery Works</h2>
+          <h2 className="text-[1.85rem] sm:text-4xl font-bold text-white mb-3 sm:mb-4">How Delivery Works</h2>
           <p className="text-[#64748b]">A straightforward process with clear expectations from day one.</p>
         </div>
 
@@ -446,7 +443,7 @@ function WhoThisIsFor() {
   ];
 
   return (
-    <section className="py-24 bg-[#030810]">
+    <section className="py-16 sm:py-20 lg:py-24 bg-[#030810]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">Audience</p>
@@ -506,7 +503,7 @@ function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="py-24 bg-[#050d1a]">
+    <section id="faq" className="py-16 sm:py-20 lg:py-24 bg-[#050d1a]">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">FAQ</p>
@@ -572,7 +569,7 @@ function LeadCaptureSection() {
   };
 
   return (
-    <section id="lead-capture" className="py-24 bg-[#030810]">
+    <section id="lead-capture" className="py-16 sm:py-20 lg:py-24 bg-[#030810]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           <div className="bg-[#0a1628] border border-[#1a2f4a] rounded-2xl p-8 sm:p-10">
@@ -642,7 +639,7 @@ function LeadCaptureSection() {
 
 function ContactSection() {
   return (
-    <section id="contact" className="py-24 bg-[#050d1a]">
+    <section id="contact" className="py-16 sm:py-20 lg:py-24 bg-[#050d1a]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-xl mx-auto text-center">
           <p className="text-[#0ea5e9] text-xs font-semibold uppercase tracking-wider mb-3">Contact</p>
