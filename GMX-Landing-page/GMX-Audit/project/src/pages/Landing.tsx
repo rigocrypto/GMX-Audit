@@ -24,26 +24,26 @@ function HeroSection() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 max-[380px]:gap-2 sm:gap-8 lg:gap-12 items-start lg:items-center py-1 max-[380px]:py-0 sm:py-14 lg:py-24">
-          <div className="max-w-xl lg:max-w-xl">
+          <div className="max-w-xl lg:max-w-xl flex flex-col items-center lg:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0ea5e9]/10 border border-[#0ea5e9]/30 text-[#0ea5e9] text-xs font-medium mb-2 sm:mb-6 uppercase tracking-wider">
               <Activity className="w-3 h-3" />
               Security Monitoring &amp; Engineering Operations
             </div>
 
-            <h1 className="text-[2.2rem] sm:text-5xl lg:text-6xl font-bold text-white leading-[1.03] mb-2 sm:mb-6">
+            <h1 className="text-[2.2rem] sm:text-5xl lg:text-6xl font-bold text-white leading-[1.03] mb-2 sm:mb-6 text-center">
               GMX Audit<br />
               <span className="text-[#0ea5e9]">Control Center</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-[#94a3b8] mb-2 sm:mb-4 leading-relaxed max-w-lg">
+            <p className="text-[1.02rem] sm:text-[1.12rem] lg:text-lg text-[#94a3b8] mb-2 sm:mb-4 leading-relaxed max-w-lg text-center lg:text-left">
               Security monitoring, CI coverage, and regression support for teams shipping critical infrastructure.
             </p>
 
-            <p className="text-[#64748b] mb-4 sm:mb-10 leading-relaxed text-sm max-w-none sm:max-w-lg">
+            <p className="text-[0.95rem] sm:text-base text-[#64748b] mb-4 sm:mb-10 leading-relaxed max-w-none sm:max-w-lg text-center lg:text-left">
               GMX Audit Control Center helps engineering and protocol teams improve release confidence with monitoring, CI validation, regression coverage, and audit-oriented operational support. We provide digital security and engineering support services for teams that need reliable release controls, faster issue detection, and clearer operational visibility.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-2 max-[380px]:gap-1.5 sm:gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 max-[380px]:gap-1.5 sm:gap-3 w-full lg:w-auto justify-center lg:justify-start">
               <a
                 href="#pricing"
                 className="inline-flex items-center justify-center gap-2 px-5 sm:px-6 py-3 bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-[#0ea5e9]/20"
@@ -66,8 +66,8 @@ function HeroSection() {
             </div>
           </div>
 
-          <div className="relative flex justify-center lg:justify-end mt-1 max-[380px]:mt-0 sm:mt-8 lg:mt-0">
-            <div className="relative w-[calc(100%+1.5rem)] -mx-3 max-[380px]:w-[calc(100%+2.5rem)] max-[380px]:-mx-5 max-w-none sm:mx-0 sm:w-full sm:max-w-md lg:max-w-lg space-y-3 sm:space-y-6">
+          <div className="relative flex justify-center lg:justify-end mt-1 max-[380px]:mt-0 sm:mt-8 lg:mt-0 -mx-6 max-[380px]:-mx-7 sm:mx-0">
+            <div className="relative w-[calc(100%+3rem)] max-[380px]:w-[calc(100%+3.5rem)] sm:w-full sm:max-w-md lg:max-w-lg space-y-3 sm:space-y-6">
               <div className="absolute -inset-1 bg-gradient-to-r from-[#0ea5e9]/30 to-[#10b981]/30 rounded-2xl blur-lg opacity-60" />
 
               {hasHeroVideo && (
@@ -80,7 +80,7 @@ function HeroSection() {
                     playsInline
                     controls
                     onError={() => setHasHeroVideo(false)}
-                    className="w-full h-[16rem] max-[380px]:h-[17.5rem] sm:max-h-80 lg:max-h-none sm:h-auto object-cover"
+                    className="w-full aspect-[9/16] sm:aspect-[4/3] lg:aspect-[16/9] object-cover"
                   />
                   <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#050d1a]/40 via-transparent to-transparent" />
                   <div className="absolute top-3 left-3 bg-[#0ea5e9] text-white text-[10px] font-bold px-2.5 py-1 rounded-full tracking-wider uppercase">
@@ -93,7 +93,7 @@ function HeroSection() {
                 <img
                   src={heroImageSrc}
                   alt="GMX Audit Security Dashboard"
-                  className="w-full h-[16.5rem] max-[380px]:h-[18rem] sm:max-h-80 lg:max-h-none sm:h-auto object-cover"
+                  className="w-full aspect-[9/16] sm:aspect-[4/3] lg:aspect-[16/9] object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#050d1a]/60 via-transparent to-transparent" />
               </div>
