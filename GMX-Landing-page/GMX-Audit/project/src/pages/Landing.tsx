@@ -43,7 +43,7 @@ function HeroSection() {
   ];
 
   return (
-    <section id="hero" className="min-h-screen bg-slate-950 px-4 pb-4 pt-24 sm:px-6 sm:pb-8 sm:pt-28 lg:pt-32">
+    <section id="hero" className="bg-slate-950 px-4 py-16 sm:px-6 sm:py-20 lg:min-h-screen lg:py-28">
       <div className="mx-auto w-full max-w-5xl">
         <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8">
           <p className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
