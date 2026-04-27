@@ -6,9 +6,12 @@ Continuous security. Real economic impact. Submission ready.
 
 GMX Audit Control Center is a deterministic security suite for Web3 protocols focused on invariant hunting, continuous regression monitoring, explainable triage, and reproducible proof packaging.
 
-[![Bounty Rotation](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml)
 [![Audit Batch CI](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml)
-[![Secret Scan](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml/badge.svg?branch=main)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml)
+
+[Bounty Rotation workflow](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml)
+[Secret Scan workflow](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml)
+
+> Workflow badges are currently inconsistent for this repo: some badge endpoints may show `no status` even when the underlying Actions runs are succeeding. Use the linked workflow pages as the source of truth.
 
 **Live Landing Page:** [https://rigocrypto.github.io/bounty-rotation-harness/](https://rigocrypto.github.io/bounty-rotation-harness/)
 
