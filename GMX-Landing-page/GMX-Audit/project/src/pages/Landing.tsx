@@ -126,9 +126,7 @@ function DashboardProofSection() {
             <video
               className="w-full"
               src={heroVideoSrc}
-              autoPlay
-              muted
-              loop
+              controls
               playsInline
               preload="metadata"
               poster={heroImageSrc}
