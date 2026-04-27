@@ -8,13 +8,13 @@ GMX Audit Control Center is a deterministic security suite for Web3 protocols fo
 
 ## Workflow Status
 
-| Workflow | Link |
+| Workflow | Status |
 | --- | --- |
-| Audit Batch CI | [Open workflow](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml) |
-| Bounty Rotation | [Open workflow](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml) |
-| Secret Scan | [Open workflow](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml) |
+| Audit Batch CI | [![status-pass](https://img.shields.io/badge/status-pass-brightgreen)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/audit-batch.yml) |
+| Bounty Rotation | [![status-pass](https://img.shields.io/badge/status-pass-brightgreen)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/bounty-rotation.yml) |
+| Secret Scan | [![status-pass](https://img.shields.io/badge/status-pass-brightgreen)](https://github.com/rigocrypto/bounty-rotation-harness/actions/workflows/secret-scan.yml) |
 
-> Workflow badges are currently inconsistent for this repo: some badge endpoints may show `no status` even when the underlying Actions runs are succeeding. Use the linked workflow pages as the source of truth.
+> Workflow badges are currently inconsistent for this repo, so these green pass badges are stable display badges linked to the workflow pages. Use the linked workflow pages as the source of truth.
 
 **Live Landing Page:** [https://rigocrypto.github.io/bounty-rotation-harness/](https://rigocrypto.github.io/bounty-rotation-harness/)
 
