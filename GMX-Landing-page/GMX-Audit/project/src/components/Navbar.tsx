@@ -1,20 +1,23 @@
 import { useState } from 'react';
 import { Shield, Menu, X } from 'lucide-react';
+import type { LocaleCode, LocaleStrings } from '../i18n/locales';
 
 interface NavbarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
+  locale: LocaleCode;
+  strings: LocaleStrings['nav'];
 }
 
-export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
+export default function Navbar({ currentPage, onNavigate, locale, strings }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = [
-    { label: 'Services', href: '#services' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'FAQ', href: '#faq' },
-    { label: 'Contact', href: '#contact' },
+    { label: strings.services, href: '#services' },
+    { label: strings.pricing, href: '#pricing' },
+    { label: strings.howItWorks, href: '#how-it-works' },
+    { label: strings.faq, href: '#faq' },
+    { label: strings.contact, href: '#contact' },
   ];
 
   const handleHomeClick = () => {
@@ -45,7 +48,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
               className="flex items-center gap-2 text-white transition-colors hover:text-cyan-400"
             >
               <Shield className="h-5 w-5 text-cyan-400 md:h-6 md:w-6" />
-              <span className="text-sm font-bold uppercase tracking-widest">GMX AUDIT</span>
+              <span className="text-sm font-bold uppercase tracking-widest">GMX AUDIT {locale.toUpperCase()}</span>
             </button>
 
             <div className="hidden items-center gap-6 md:flex">
@@ -70,14 +73,14 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 }}
                 className="rounded-xl bg-cyan-500 px-4 py-2 text-base font-semibold text-white transition-colors hover:bg-cyan-400"
               >
-                View Plans
+                {strings.viewPlans}
               </a>
             </div>
 
             <button
               className="p-2 text-slate-200 transition-colors hover:text-white md:hidden"
               onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+              aria-label={mobileOpen ? strings.closeMenu : strings.openMenu}
             >
               {mobileOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" />}
             </button>
@@ -88,7 +91,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
       {mobileOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <button
-            aria-label="Close menu"
+            aria-label={strings.closeMenu}
             className="absolute inset-0 bg-slate-950/90"
             onClick={() => setMobileOpen(false)}
           />
@@ -120,7 +123,7 @@ export default function Navbar({ currentPage, onNavigate }: NavbarProps) {
                 }}
                 className="block rounded-xl bg-cyan-500 px-4 py-4 text-center text-lg font-semibold text-white transition-colors hover:bg-cyan-400"
               >
-                View Plans
+                {strings.viewPlans}
               </a>
             </div>
           </div>

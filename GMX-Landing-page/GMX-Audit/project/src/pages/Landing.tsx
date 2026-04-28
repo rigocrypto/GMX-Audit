@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   ArrowRight,
-  BarChart2,
   CheckCircle,
   ChevronDown,
   ChevronUp,
@@ -14,13 +13,14 @@ import {
   Server,
   Shield,
   Star,
-  Users,
   Zap,
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { LOCALE_BUNDLES, type LocaleCode } from '../i18n/locales';
 
 interface LandingProps {
   onNavigate: (page: string) => void;
+  locale: LocaleCode;
 }
 
 function HeroSection() {
@@ -43,14 +43,14 @@ function HeroSection() {
   ];
 
   return (
-    <section id="hero" className="bg-slate-950 px-4 py-16 sm:px-6 sm:py-20 lg:min-h-screen lg:py-28">
+    <section id="hero" aria-labelledby="hero-title" className="bg-slate-950 px-4 py-16 sm:px-6 sm:py-20 lg:min-h-screen lg:py-28">
       <div className="mx-auto w-full max-w-5xl">
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8">
+        <header className="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 sm:p-8">
           <p className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">
             Security Monitoring &amp; Engineering
           </p>
 
-          <h1 className="mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
+          <h1 id="hero-title" className="mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
             Stop Exploits
             <br />
             <span className="text-cyan-400">Before They Happen</span>
@@ -85,7 +85,7 @@ function HeroSection() {
               </div>
             ))}
           </div>
-        </div>
+        </header>
       </div>
     </section>
   );
@@ -116,13 +116,13 @@ function DashboardProofSection() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="bg-slate-950 px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
+    <section ref={sectionRef} aria-labelledby="monitoring-title" className="bg-slate-950 px-4 pb-12 pt-4 sm:px-6 sm:pt-6">
       <div className="mx-auto w-full max-w-4xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">See It In Action</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Real-time Security Monitoring</h2>
+        <h2 id="monitoring-title" className="mt-2 text-2xl font-bold text-white sm:text-3xl">Real-time Security Monitoring</h2>
 
         <div className="mt-4 space-y-4">
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70">
+          <figure className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70">
             <video
               className="w-full"
               src={heroVideoSrc}
@@ -131,15 +131,17 @@ function DashboardProofSection() {
               preload="metadata"
               poster={heroImageSrc}
             />
-          </div>
-          <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70">
+            <figcaption className="sr-only">Live dashboard walkthrough of the GMX Audit monitoring workflow.</figcaption>
+          </figure>
+          <figure className="overflow-hidden rounded-xl border border-slate-800 bg-slate-900/70">
             <img
               className="w-full"
               src={heroImageSrc}
               alt="GMX Audit dashboard preview"
               loading="lazy"
             />
-          </div>
+            <figcaption className="sr-only">Static dashboard preview showing risk scoring and findings.</figcaption>
+          </figure>
         </div>
 
         <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6">
@@ -223,10 +225,10 @@ function ValueSection() {
   ];
 
   return (
-    <section id="services" className="bg-slate-950 px-4 py-12 sm:px-6">
+    <section id="services" aria-labelledby="services-title" className="bg-slate-950 px-4 py-12 sm:px-6">
       <div className="mx-auto w-full max-w-6xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Why GMX Audit?</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Built for DeFi Risk</h2>
+        <h2 id="services-title" className="mt-2 text-2xl font-bold text-white sm:text-3xl">Built for DeFi Risk</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
           {items.map((item) => (
@@ -323,10 +325,10 @@ function PricingSection() {
   ];
 
   return (
-    <section id="pricing" className="bg-slate-950 px-4 py-12 sm:px-6">
+    <section id="pricing" aria-labelledby="pricing-title" className="bg-slate-950 px-4 py-12 sm:px-6">
       <div className="mx-auto w-full max-w-6xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Choose Your Plan</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">Simple, Transparent Pricing</h2>
+        <h2 id="pricing-title" className="mt-2 text-2xl font-bold text-white sm:text-3xl">Simple, Transparent Pricing</h2>
         <p className="mt-2 text-base text-slate-400">
           All plans include deterministic monitoring and expert-backed support.
         </p>
@@ -386,10 +388,10 @@ function HowItWorksSection() {
   ];
 
   return (
-    <section id="how-it-works" className="bg-slate-950 px-4 py-12 sm:px-6">
+    <section id="how-it-works" aria-labelledby="how-it-works-title" className="bg-slate-950 px-4 py-12 sm:px-6">
       <div className="mx-auto w-full max-w-6xl">
         <p className="text-xs font-semibold uppercase tracking-widest text-cyan-400">How It Works</p>
-        <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">From Data to Detection</h2>
+        <h2 id="how-it-works-title" className="mt-2 text-2xl font-bold text-white sm:text-3xl">From Data to Detection</h2>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           {steps.map((step, idx) => (
@@ -412,8 +414,9 @@ function TrustStripSection() {
   const badges = ['DeFi Protocols', 'Audit Firms', 'Security Researchers', 'Web3 Builders'];
 
   return (
-    <section className="border-y border-slate-800 bg-slate-950 px-4 py-8 sm:px-6">
+    <section aria-labelledby="trusted-title" className="border-y border-slate-800 bg-slate-950 px-4 py-8 sm:px-6">
       <div className="mx-auto w-full max-w-6xl">
+        <h2 id="trusted-title" className="sr-only">Trusted By Security-Focused Teams</h2>
         <p className="text-center text-xs font-semibold uppercase tracking-widest text-slate-400">
           Trusted By Security-Focused Teams
         </p>
@@ -459,9 +462,9 @@ function FAQSection() {
   ];
 
   return (
-    <section id="faq" className="bg-slate-950 px-4 py-12 sm:px-6">
+    <section id="faq" aria-labelledby="faq-title" className="bg-slate-950 px-4 py-12 sm:px-6">
       <div className="mx-auto w-full max-w-4xl">
-        <h2 className="text-2xl font-bold text-white sm:text-3xl">Frequently Asked Questions</h2>
+        <h2 id="faq-title" className="text-2xl font-bold text-white sm:text-3xl">Frequently Asked Questions</h2>
         <div className="mt-6 space-y-3">
           {faqs.map((faq, i) => (
             <article key={faq.q} className="rounded-xl border border-slate-800 bg-slate-900/70">
@@ -487,9 +490,9 @@ function FAQSection() {
 
 function ContactSection() {
   return (
-    <section id="contact" className="bg-slate-950 px-4 py-12 sm:px-6">
+    <section id="contact" aria-labelledby="contact-title" className="bg-slate-950 px-4 py-12 sm:px-6">
       <div className="mx-auto w-full max-w-3xl rounded-2xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8">
-        <h2 className="text-2xl font-bold text-white sm:text-3xl">Get in Touch</h2>
+        <h2 id="contact-title" className="text-2xl font-bold text-white sm:text-3xl">Get in Touch</h2>
         <p className="mt-2 text-base text-slate-300">We respond within one business day.</p>
 
         <div className="mt-5 flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-950/70 p-4">
@@ -679,7 +682,7 @@ function getLegalRouteFromHash(hash: string): LegalPageType | null {
   return null;
 }
 
-export default function Landing({ onNavigate }: LandingProps) {
+export default function Landing({ onNavigate, locale }: LandingProps) {
   const [legalPage, setLegalPage] = useState<LegalPageType | null>(() =>
     typeof window === 'undefined' ? null : getLegalRouteFromHash(window.location.hash)
   );
@@ -715,8 +718,18 @@ export default function Landing({ onNavigate }: LandingProps) {
 
   return (
     <>
-      <Navbar currentPage="home" onNavigate={onNavigate} />
-      <main className="bg-slate-950 pb-24 md:pb-0">
+      <Navbar currentPage="home" onNavigate={onNavigate} locale={locale} strings={LOCALE_BUNDLES[locale].strings.nav} />
+      <main className="bg-slate-950 pb-24 md:pb-0" role="main" aria-label="GMX Audit Control Center homepage">
+        <section className="bg-slate-950 px-4 pt-20 sm:px-6">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-end gap-2 text-xs text-slate-300">
+            <span className="text-slate-400">Language:</span>
+            <a className={locale === 'en' ? 'font-semibold text-cyan-400' : 'hover:text-white'} href={`${import.meta.env.BASE_URL}en/`}>EN</a>
+            <span>/</span>
+            <a className={locale === 'es' ? 'font-semibold text-cyan-400' : 'hover:text-white'} href={`${import.meta.env.BASE_URL}es/`}>ES</a>
+            <span>/</span>
+            <a className={locale === 'fr' ? 'font-semibold text-cyan-400' : 'hover:text-white'} href={`${import.meta.env.BASE_URL}fr/`}>FR</a>
+          </div>
+        </section>
         <HeroSection />
         <DashboardProofSection />
         <ValueSection />

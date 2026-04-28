@@ -5,6 +5,7 @@ import Landing from './pages/Landing';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import Support from './pages/Support';
+import { DEFAULT_LOCALE, isSupportedLocale, LOCALE_BUNDLES, type LocaleCode } from './i18n/locales';
 
 type Page = 'home' | 'privacy' | 'terms' | 'support';
 
@@ -22,10 +23,28 @@ function getPageFromHash(): Page {
   return HASH_TO_PAGE[hash] ?? 'home';
 }
 
+function isPage(value: string): value is Page {
+  return value === 'home' || value === 'privacy' || value === 'terms' || value === 'support';
+}
+
+function getLocaleFromPathname(pathname: string): LocaleCode | null {
+  const base = import.meta.env.BASE_URL;
+  const withoutBase = pathname.startsWith(base) ? pathname.slice(base.length) : pathname.replace(/^\/+/, '');
+  const localeSegment = withoutBase.split('/').filter(Boolean)[0] ?? null;
+  return isSupportedLocale(localeSegment) ? localeSegment : null;
+}
+
+function getLocaleRootUrl(locale: LocaleCode): string {
+  return `${import.meta.env.BASE_URL}${locale}/`;
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>(getPageFromHash);
+  const [locale, setLocale] = useState<LocaleCode>(() => getLocaleFromPathname(window.location.pathname) ?? DEFAULT_LOCALE);
 
-  const navigate = (target: Page) => {
+  const navigate = (target: string) => {
+    if (!isPage(target)) return;
+
     const PAGE_TO_HASH: Record<Page, string> = {
       home: '',
       privacy: '#privacy',
@@ -38,21 +57,32 @@ export default function App() {
   };
 
   useEffect(() => {
+    const currentLocale = getLocaleFromPathname(window.location.pathname);
+    if (!currentLocale) {
+      window.location.replace(getLocaleRootUrl(DEFAULT_LOCALE));
+      return;
+    }
+
+    setLocale(currentLocale);
+    document.documentElement.lang = LOCALE_BUNDLES[currentLocale].meta.languageTag;
+
     const handlePopState = () => setPage(getPageFromHash());
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  const strings = LOCALE_BUNDLES[locale].strings;
+
   return (
     <div className="min-h-screen bg-[#050d1a] font-sans">
-      <Navbar currentPage={page} onNavigate={navigate} />
+      <Navbar currentPage={page} onNavigate={navigate} locale={locale} strings={strings.nav} />
       <main>
-        {page === 'home' && <Landing onNavigate={navigate} />}
+        {page === 'home' && <Landing onNavigate={navigate} locale={locale} />}
         {page === 'privacy' && <Privacy onNavigate={navigate} />}
         {page === 'terms' && <Terms onNavigate={navigate} />}
         {page === 'support' && <Support onNavigate={navigate} />}
       </main>
-      <Footer onNavigate={navigate} />
+      <Footer onNavigate={navigate} locale={locale} strings={strings.footer} />
     </div>
   );
 }
