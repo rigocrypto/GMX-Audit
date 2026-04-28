@@ -82,10 +82,56 @@ Each bundle contains:
 - **meta**: Language tag, page title, description
 - **strings**: Navbar, footer, and UI labels for that locale
 
-Adding a new locale:
-1. Add entry to `LOCALE_BUNDLES` with all 16 required keys
-2. Run `npm run build` — the integrity check will verify completeness
-3. Update `SUPPORTED_LOCALES` array if needed
+### Adding a New Locale
+
+To add a new locale (e.g., `de` for German):
+
+1. **Edit `src/i18n/locales.ts`**:
+   - Add locale type to `LocaleCode` union: `type LocaleCode = 'en' | 'es' | 'fr' | 'de'`
+   - Add entry to `SUPPORTED_LOCALES`: `'de'`
+   - Add complete bundle to `LOCALE_BUNDLES` with all 16 keys (see existing locales for required keys):
+     ```typescript
+     de: {
+       meta: {
+         languageTag: 'de-DE',
+         title: 'GMX Audit Control Center',
+         description: 'German description...',
+       },
+       strings: {
+         nav: { /* 6 nav labels */ },
+         footer: { /* 10 footer labels */ },
+       },
+     }
+     ```
+
+2. **Update `public/sitemap.xml`**:
+   - Add three entries for German locale (home + 2 legal pages):
+     ```xml
+     <url>
+       <loc>https://your-domain.com/de/</loc>
+       <changefreq>weekly</changefreq>
+       <priority>1.0</priority>
+     </url>
+     <!-- repeat for #/privacy and #/terms -->
+     ```
+
+3. **Update `index.html` hreflang tags** (optional, but recommended):
+   - Add German alternate to the existing `<link rel="alternate" hreflang>` list:
+     ```html
+     <link rel="alternate" hreflang="de-DE" href="https://your-domain.com/de/" />
+     ```
+
+4. **Run the build**:
+   ```bash
+   npm run build
+   ```
+   The integrity check will verify that all 16 keys are present. If any are missing, the build will fail with a clear error message.
+
+5. **Verify the output**:
+   - Check that `dist/de/index.html` was generated with correct `lang="de-DE"` and German title
+   - Confirm hreflang tags are present in the prerendered HTML
+
+The Vite prerender plugin automatically generates `dist/{locale}/index.html` for each locale in `SUPPORTED_LOCALES`, so no routing changes needed — just update the locale data and run build.
 
 ## Prerendering & SEO
 
