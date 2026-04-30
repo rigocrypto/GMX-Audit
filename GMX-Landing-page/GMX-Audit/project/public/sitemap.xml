@@ -15,34 +15,4 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/en/#/privacy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/en/#/terms</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/es/#/privacy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/es/#/terms</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/fr/#/privacy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://rigocrypto.github.io/GMX-Audit/fr/#/terms</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
 </urlset>
