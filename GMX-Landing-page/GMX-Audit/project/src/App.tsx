@@ -51,7 +51,8 @@ export default function App() {
       terms: '#terms',
       support: '#support',
     };
-    window.history.pushState(null, '', PAGE_TO_HASH[target] || '/');
+    const nextHash = PAGE_TO_HASH[target];
+    window.history.pushState(null, '', `${getLocaleRootUrl(locale)}${nextHash}`);
     setPage(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

@@ -166,7 +166,7 @@ All canonical URLs are **locale-specific** (e.g., `/en/` points to itself, not `
 
 ### GitHub Pages
 
-The app is configured for deployment to GitHub Pages at `https://rigocrypto.github.io/bounty-rotation-harness/`.
+The app is configured for deployment to GitHub Pages at `https://rigocrypto.github.io/GMX-Audit/`.
 
 Set `BASE_URL` in `vite.config.ts` to match your repository path.
 
