@@ -135,7 +135,7 @@
     "axios": "^1.12.2",
     "serialize-javascript": "^7.0.0",
     "undici": "^6.24.0",
-    "tmp": "^0.2.4",
+    "tmp": "^0.2.7",
     "cookie": "^0.7.2",
     "elliptic": "^6.6.1",
     "fast-xml-parser": "^5.7.1"
