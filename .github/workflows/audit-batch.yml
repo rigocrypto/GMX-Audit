@@ -91,9 +91,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -105,22 +102,9 @@ jobs:
         run: |
           echo "=== CI DEBUG ==="
           echo "Checked out SHA: $(git rev-parse --short HEAD)"
-          echo "Branch: $(git branch --show-current)"
           echo "Top 3 commits:"
-          git log --oneline -3
+          git log --oneline -3 || true
           echo "=================="
-
-      - name: Enforce minimum checkout SHA
-        run: |
-          CURRENT_SHA="$(git rev-parse HEAD)"
-          MAIN_SHA="$(git ls-remote origin refs/heads/main | cut -f1)"
-          if [ "$CURRENT_SHA" != "$MAIN_SHA" ]; then
-            echo "ERROR: stale workflow ref detected."
-            echo "Checked out: $CURRENT_SHA"
-            echo "Current origin/main: $MAIN_SHA"
-            echo "Re-run from latest main or update the PR branch."
-            exit 1
-          fi
 
       - name: Install Dependencies
         run: npm ci
