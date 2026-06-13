@@ -1,0 +1,22 @@
+[allowlist]
+description = "Placeholder and documentation Stripe keys — not real credentials"
+
+regexes = [
+  # Intentional placeholder values, not real keys
+  '''sk_test_replace_me''',
+  '''whsec_replace_me''',
+  # Truncated ellipsis patterns used in docs (sk_test_... / sk_live_...)
+  '''sk_(test|live)_\.\.\.''',
+]
+
+paths = [
+  # Example env files committed as templates
+  '''.env\.example''',
+  '''.env\.managed\.example''',
+  # Test fixtures — value is a sentinel, not a real key
+  '''tests/billing/webhookHandler\.test\.ts''',
+  # Documentation runbooks that show key format examples
+  '''docs/billing-runbook\.md''',
+  '''docs/billing-validation\.md''',
+  '''docs/ops-runbook\.md''',
+]
