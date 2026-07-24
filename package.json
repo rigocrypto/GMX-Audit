@@ -132,9 +132,12 @@
     "stripe": "^18.2.1"
   },
   "overrides": {
-    "axios": "^1.12.2",
+    "axios": "^1.14.0",
+    "js-yaml": "^4.1.1",
     "serialize-javascript": "^7.0.0",
     "undici": "^6.24.0",
+    "adm-zip": "^0.5.14",
+    "uuid": "^10.0.0",
     "tmp": "^0.2.7",
     "cookie": "^0.7.2",
     "elliptic": "^6.6.1",
