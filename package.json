@@ -132,6 +132,7 @@
     "stripe": "^18.2.1"
   },
   "overrides": {
+    "eslint": "^9.39.0",
     "axios": "^1.14.0",
     "js-yaml": "^4.1.1",
     "serialize-javascript": "^7.0.0",
