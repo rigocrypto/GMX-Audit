@@ -116,6 +116,20 @@ PROGRAMS = [
                   "additions postdate the March audits. Revisit on deployment change, new audit, known-issue "
                   "update, or scope expansion. Immunefi (not HackenProof)."),
     },
+    {
+        "name": "Yearn V3 - Sherlock",
+        "url": "https://audits.sherlock.xyz/bug-bounties/30",
+        "reputation_required": 0,
+        "access_confirmed": True,
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 200000,
+        "status": "WATCH",
+        "notes": ("Phase 0 clean at 6c4ccc8. Base Vault.vy/TokenizedStrategy.sol/BaseStrategy.sol excluded as "
+                  "Immunefi duplicates; yRoboTreasury custom paths reduce to trusted roles + accepted auction "
+                  "risks. Sherlock scope is DYNAMIC (yearn.fi/v3). Revisit when a custom strategy is added, "
+                  "yRoboTreasury changes, or a strategy introduces custom valuation/withdrawal/reporting logic."),
+    },
 ]
 
 SCORE_FIELDS = ["reputation_required", "critical_bounty_usd", "score", "priority", "notes", "status"]
