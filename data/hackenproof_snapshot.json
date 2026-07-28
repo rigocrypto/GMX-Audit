@@ -1,6 +1,21 @@
 {
-  "generated_at": "2026-07-28T19:38:39.481885+00:00",
+  "generated_at": "2026-07-28T22:35:37.653715+00:00",
   "programs": [
+    {
+      "name": "Strata",
+      "url": "https://immunefi.com/bug-bounty/strata/information/",
+      "reputation_required": 0,
+      "access_confirmed": true,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 250000,
+      "status": "WATCH",
+      "notes": "Phase 0 clean at commit 07fb443. June-2026 cooldown/CDO/RoundingGuard/UD60x18Ext scope additions postdate the March audits. Revisit on deployment change, new audit, known-issue update, or scope expansion. Immunefi (not HackenProof).",
+      "score": 12,
+      "priority": "HIGH",
+      "web_reachability": "skipped",
+      "new_since_last_week": true
+    },
     {
       "name": "ShapeShift",
       "url": "https://hackenproof.com/programs/shapeshift",
@@ -42,7 +57,7 @@
       "score": 4,
       "priority": "LOW",
       "web_reachability": "skipped",
-      "new_since_last_week": true
+      "new_since_last_week": false
     },
     {
       "name": "RISC Zero Blockchain Verifiers",
@@ -85,7 +100,7 @@
       "score": 3,
       "priority": "LOW",
       "web_reachability": "skipped",
-      "new_since_last_week": true
+      "new_since_last_week": false
     }
   ]
 }

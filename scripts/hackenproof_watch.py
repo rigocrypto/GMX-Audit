@@ -103,6 +103,19 @@ PROGRAMS = [
                   "with a reproducible Rust toolchain + working Rust/Solidity fixtures + a concrete "
                   "commitment/timeout/proxy/MPT hypothesis not already regression-covered."),
     },
+    {
+        "name": "Strata",
+        "url": "https://immunefi.com/bug-bounty/strata/information/",
+        "reputation_required": 0,
+        "access_confirmed": True,
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 250000,
+        "status": "WATCH",
+        "notes": ("Phase 0 clean at commit 07fb443. June-2026 cooldown/CDO/RoundingGuard/UD60x18Ext scope "
+                  "additions postdate the March audits. Revisit on deployment change, new audit, known-issue "
+                  "update, or scope expansion. Immunefi (not HackenProof)."),
+    },
 ]
 
 SCORE_FIELDS = ["reputation_required", "critical_bounty_usd", "score", "priority", "notes", "status"]
