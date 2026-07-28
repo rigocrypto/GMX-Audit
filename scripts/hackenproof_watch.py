@@ -72,6 +72,37 @@ PROGRAMS = [
         "status": "CLOSED-NO-FINDING",
         "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
     },
+    {
+        "name": "SuperEarn Web & Smart Contracts",
+        "url": "https://hackenproof.com/programs/superearn-web-and-smart-contracts",
+        "reputation_required": None,  # UNCONFIRMED — verify <=80 before treating as accessible
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 30000,
+        "status": "PAUSED-WATCH",
+        "reopen_priority": "HIGH",
+        "notes": ("PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/"
+                  "OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/"
+                  "superearn-core-public; permissionless flows; direct fund-safety invariants. Foundry-fork "
+                  "reproducible. Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: "
+                  "DEPLOYMENT-DIFF FIRST. Rep UNCONFIRMED — confirm <=80. See targets/superearn/reports/"
+                  "reopen-checklist.md. Do NOT assess while paused."),
+    },
+    {
+        "name": "Hyperbridge Protocol",
+        "url": "https://hackenproof.com/programs/hyperbridge-protocol",
+        "reputation_required": None,  # no public requirement displayed
+        "access_confirmed": True,     # access confirmed (repos cloned/built locally)
+        "type": "smart-contracts",
+        "ecosystem": "EVM/Rust",
+        "critical_bounty_usd": 50000,
+        "status": "PAUSED",
+        "notes": ("PAUSED-TOOLCHAIN. paid $152.5k, 2102 submissions; Solidity Merkle v1.1.0 hardened and "
+                  "independently reconciled (22/22 + 3/3 differential). Residual Rust/ISMP/proxy surface "
+                  "BLOCKED by missing cargo/rustc and lacks a specific consumer-binding lead. Reopen only "
+                  "with a reproducible Rust toolchain + working Rust/Solidity fixtures + a concrete "
+                  "commitment/timeout/proxy/MPT hypothesis not already regression-covered."),
+    },
 ]
 
 SCORE_FIELDS = ["reputation_required", "critical_bounty_usd", "score", "priority", "notes", "status"]
@@ -88,7 +119,10 @@ def load_previous():
 
 def score_program(p):
     score = 0
-    if p.get("reputation_required", 999) <= 80:
+    rep = p.get("reputation_required")
+    # Accessibility bonus when access is confirmed, or the requirement is a
+    # confirmed number <= 80. None/unknown without access_confirmed => not assumed accessible.
+    if p.get("access_confirmed") or (isinstance(rep, int) and rep <= 80):
         score += 2
     if p.get("type") == "smart-contracts":
         score += 2
@@ -113,8 +147,8 @@ def score_program(p):
     status = (p.get("status") or "").upper()
     if status == "CLOSED-NO-FINDING":
         score -= 6
-    elif status == "PAUSED":
-        score -= 4
+    elif status in ("PAUSED", "PAUSED-WATCH"):
+        score -= 4  # tracked, but not actionable while paused (no submission channel)
     elif status == "NEW":
         score += 4
     return score
@@ -199,8 +233,9 @@ def write_report(curr, added, removed, changed, alerts):
           "| Program | Rep | Eco | Critical | Score | Priority | Status | New? | Web | Notes |",
           "|---|---:|---|---:|---:|---|---|:--:|---|---|"]
     for p in curr["programs"]:
+        rep_disp = p["reputation_required"] if p.get("reputation_required") is not None else "?"
         L.append(
-            f"| [{p['name']}]({p['url']}) | {p['reputation_required']} | {p['ecosystem']} | "
+            f"| [{p['name']}]({p['url']}) | {rep_disp} | {p['ecosystem']} | "
             f"${p['critical_bounty_usd']:,} | {p['score']} | {p['priority']} | {p.get('status','')} | "
             f"{'🆕' if p.get('new_since_last_week') else ''} | {p.get('web_reachability','')} | {p['notes']} |"
         )

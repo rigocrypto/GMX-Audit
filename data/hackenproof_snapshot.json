@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-28T17:30:49.582973+00:00",
+  "generated_at": "2026-07-28T19:38:39.481885+00:00",
   "programs": [
     {
       "name": "ShapeShift",
@@ -30,6 +30,21 @@
       "new_since_last_week": false
     },
     {
+      "name": "SuperEarn Web & Smart Contracts",
+      "url": "https://hackenproof.com/programs/superearn-web-and-smart-contracts",
+      "reputation_required": null,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 30000,
+      "status": "PAUSED-WATCH",
+      "reopen_priority": "HIGH",
+      "notes": "PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/superearn-core-public; permissionless flows; direct fund-safety invariants. Foundry-fork reproducible. Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: DEPLOYMENT-DIFF FIRST. Rep UNCONFIRMED \u2014 confirm <=80. See targets/superearn/reports/reopen-checklist.md. Do NOT assess while paused.",
+      "score": 4,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": true
+    },
+    {
       "name": "RISC Zero Blockchain Verifiers",
       "url": "https://hackenproof.com/programs/risc-zero-blockchain-verifiers",
       "reputation_required": 50,
@@ -56,6 +71,21 @@
       "priority": "LOW",
       "web_reachability": "skipped",
       "new_since_last_week": false
+    },
+    {
+      "name": "Hyperbridge Protocol",
+      "url": "https://hackenproof.com/programs/hyperbridge-protocol",
+      "reputation_required": null,
+      "access_confirmed": true,
+      "type": "smart-contracts",
+      "ecosystem": "EVM/Rust",
+      "critical_bounty_usd": 50000,
+      "status": "PAUSED",
+      "notes": "PAUSED-TOOLCHAIN. paid $152.5k, 2102 submissions; Solidity Merkle v1.1.0 hardened and independently reconciled (22/22 + 3/3 differential). Residual Rust/ISMP/proxy surface BLOCKED by missing cargo/rustc and lacks a specific consumer-binding lead. Reopen only with a reproducible Rust toolchain + working Rust/Solidity fixtures + a concrete commitment/timeout/proxy/MPT hypothesis not already regression-covered.",
+      "score": 3,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": true
     }
   ]
 }
