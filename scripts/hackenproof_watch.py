@@ -72,6 +72,23 @@ PROGRAMS = [
         "status": "CLOSED-NO-FINDING",
         "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
     },
+    {
+        "name": "SuperEarn Web & Smart Contracts",
+        "url": "https://hackenproof.com/programs/superearn-web-and-smart-contracts",
+        "reputation_required": None,  # UNCONFIRMED — verify <=80 before treating as accessible
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 30000,
+        "status": "PAUSED-WATCH",
+        "reopen_priority": "HIGH",
+        "notes": ("PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/"
+                  "OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/"
+                  "superearn-core-public; permissionless flows; direct fund-safety invariants (queue "
+                  "conservation, FIFO claims, decimal/aggregation, harvest P&L). Foundry-fork reproducible. "
+                  "Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: DEPLOYMENT-DIFF FIRST "
+                  "(published repo vs audited commits vs deployed proxies vs post-pause upgrades). "
+                  "Rep requirement UNCONFIRMED — confirm <=80. Do NOT assess while paused / no submission channel."),
+    },
 ]
 
 SCORE_FIELDS = ["reputation_required", "critical_bounty_usd", "score", "priority", "notes", "status"]
@@ -88,7 +105,10 @@ def load_previous():
 
 def score_program(p):
     score = 0
-    if p.get("reputation_required", 999) <= 80:
+    rep = p.get("reputation_required")
+    # Accessibility bonus only when the requirement is a CONFIRMED number <= 80.
+    # None/unknown => do not assume accessible.
+    if isinstance(rep, (int, float)) and rep <= 80:
         score += 2
     if p.get("type") == "smart-contracts":
         score += 2
@@ -113,8 +133,8 @@ def score_program(p):
     status = (p.get("status") or "").upper()
     if status == "CLOSED-NO-FINDING":
         score -= 6
-    elif status == "PAUSED":
-        score -= 4
+    elif status in ("PAUSED", "PAUSED-WATCH"):
+        score -= 4  # tracked, but not actionable while paused (no submission channel)
     elif status == "NEW":
         score += 4
     return score
@@ -199,8 +219,9 @@ def write_report(curr, added, removed, changed, alerts):
           "| Program | Rep | Eco | Critical | Score | Priority | Status | New? | Web | Notes |",
           "|---|---:|---|---:|---:|---|---|:--:|---|---|"]
     for p in curr["programs"]:
+        rep_disp = p["reputation_required"] if p.get("reputation_required") is not None else "?"
         L.append(
-            f"| [{p['name']}]({p['url']}) | {p['reputation_required']} | {p['ecosystem']} | "
+            f"| [{p['name']}]({p['url']}) | {rep_disp} | {p['ecosystem']} | "
             f"${p['critical_bounty_usd']:,} | {p['score']} | {p['priority']} | {p.get('status','')} | "
             f"{'🆕' if p.get('new_since_last_week') else ''} | {p.get('web_reachability','')} | {p['notes']} |"
         )

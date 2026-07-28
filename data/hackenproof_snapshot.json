@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-28T17:30:49.582973+00:00",
+  "generated_at": "2026-07-28T18:39:00.787759+00:00",
   "programs": [
     {
       "name": "ShapeShift",
@@ -24,6 +24,21 @@
       "critical_bounty_usd": 100000,
       "status": "CLOSED-NO-FINDING",
       "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
+      "score": 4,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": false
+    },
+    {
+      "name": "SuperEarn Web & Smart Contracts",
+      "url": "https://hackenproof.com/programs/superearn-web-and-smart-contracts",
+      "reputation_required": null,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 30000,
+      "status": "PAUSED-WATCH",
+      "reopen_priority": "HIGH",
+      "notes": "PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/superearn-core-public; permissionless flows; direct fund-safety invariants (queue conservation, FIFO claims, decimal/aggregation, harvest P&L). Foundry-fork reproducible. Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: DEPLOYMENT-DIFF FIRST (published repo vs audited commits vs deployed proxies vs post-pause upgrades). Rep requirement UNCONFIRMED \u2014 confirm <=80. Do NOT assess while paused / no submission channel.",
       "score": 4,
       "priority": "LOW",
       "web_reachability": "skipped",
