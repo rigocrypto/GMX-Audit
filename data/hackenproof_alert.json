@@ -1,20 +1,4 @@
 {
-  "generated_at": "2026-07-28T23:28:59.041652+00:00",
-  "alerts": [
-    {
-      "name": "Yearn V3 - Sherlock",
-      "url": "https://audits.sherlock.xyz/bug-bounties/30",
-      "reputation_required": 0,
-      "access_confirmed": true,
-      "type": "smart-contracts",
-      "ecosystem": "EVM",
-      "critical_bounty_usd": 200000,
-      "status": "WATCH",
-      "notes": "Phase 0 clean at 6c4ccc8. Base Vault.vy/TokenizedStrategy.sol/BaseStrategy.sol excluded as Immunefi duplicates; yRoboTreasury custom paths reduce to trusted roles + accepted auction risks. Sherlock scope is DYNAMIC (yearn.fi/v3). Revisit when a custom strategy is added, yRoboTreasury changes, or a strategy introduces custom valuation/withdrawal/reporting logic.",
-      "score": 12,
-      "priority": "HIGH",
-      "web_reachability": "skipped",
-      "new_since_last_week": true
-    }
-  ]
+  "generated_at": "2026-07-28T23:53:38.682590+00:00",
+  "alerts": []
 }

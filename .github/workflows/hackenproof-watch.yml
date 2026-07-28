@@ -34,6 +34,14 @@ jobs:
           git diff --cached --quiet || git commit -m "chore: weekly hackenproof watch update"
           git push
 
+      - name: Ensure watcher label exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create hackenproof-watch \
+            --description "Automated security target watcher alert" \
+            --color 1D76DB 2>/dev/null || true
+
       - name: Open issue for new high-priority targets
         env:
           GH_TOKEN: ${{ github.token }}
@@ -58,7 +66,12 @@ jobs:
                     "+ permissionless economic path + meaningful payout signal + practical local PoC.",
                     "", "See reports/hackenproof_weekly_report.md."]
           body = "\n".join(lines)
-          subprocess.run(["gh", "issue", "create", "--title", title, "--body", body,
-                          "--label", "hackenproof-watch"], check=False)
-          print(f"Opened issue for {len(alerts)} alert(s).")
+          res = subprocess.run(["gh", "issue", "create", "--title", title, "--body", body,
+                                "--label", "hackenproof-watch"],
+                               capture_output=True, text=True)
+          if res.returncode != 0:
+              # non-fatal, but must NOT be silent — surface so a green run can't hide a failed alert
+              print(f"::error::gh issue create failed (rc={res.returncode}): {res.stderr.strip()}")
+          else:
+              print(f"Opened issue for {len(alerts)} alert(s): {res.stdout.strip()}")
           PY

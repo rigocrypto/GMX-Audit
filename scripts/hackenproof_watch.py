@@ -30,7 +30,7 @@ CSV_FILE = DATA_DIR / "hackenproof_snapshot.csv"
 ALERT_FILE = DATA_DIR / "hackenproof_alert.json"
 REPORT_FILE = REPORTS_DIR / "hackenproof_weekly_report.md"
 
-# Curated watch list. status: NEW | WATCH | PAUSED | CLOSED-NO-FINDING
+# Curated watch list. status: NEW | WATCH | PAUSED | PAUSED-WATCH | PAUSED-TOOLCHAIN | CLOSED-NO-FINDING
 PROGRAMS = [
     {
         "name": "ShapeShift",
@@ -49,7 +49,7 @@ PROGRAMS = [
         "type": "smart-contracts",
         "ecosystem": "EVM",
         "critical_bounty_usd": 150000,
-        "status": "PAUSED",
+        "status": "PAUSED-TOOLCHAIN",
         "notes": "high-value verifier scope, toolchain-heavy; contract surface clean/audit-saturated. paused-toolchain-gate.",
     },
     {
@@ -96,7 +96,7 @@ PROGRAMS = [
         "type": "smart-contracts",
         "ecosystem": "EVM/Rust",
         "critical_bounty_usd": 50000,
-        "status": "PAUSED",
+        "status": "PAUSED-TOOLCHAIN",
         "notes": ("PAUSED-TOOLCHAIN. paid $152.5k, 2102 submissions; Solidity Merkle v1.1.0 hardened and "
                   "independently reconciled (22/22 + 3/3 differential). Residual Rust/ISMP/proxy surface "
                   "BLOCKED by missing cargo/rustc and lacks a specific consumer-binding lead. Reopen only "
@@ -129,6 +129,21 @@ PROGRAMS = [
                   "Immunefi duplicates; yRoboTreasury custom paths reduce to trusted roles + accepted auction "
                   "risks. Sherlock scope is DYNAMIC (yearn.fi/v3). Revisit when a custom strategy is added, "
                   "yRoboTreasury changes, or a strategy introduces custom valuation/withdrawal/reporting logic."),
+    },
+    {
+        "name": "GMX v2 - Immunefi",
+        "url": "https://immunefi.com/bug-bounty/gmx/information/",
+        "reputation_required": 0,
+        "access_confirmed": True,
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 5000000,
+        "status": "WATCH",
+        "notes": ("Pending/lent-impact Phase 0 clean at 2b08e88. Live v2.2 mechanism reconciled on "
+                  "Arbitrum: split/full decreases telescope, full close clears pending impact, lent "
+                  "impact is symmetric, GM valuation and withdrawal caps are consistent. Revisit on "
+                  "deployed increase-path changes, liquidation/ADL changes, GLV aggregation changes, "
+                  "or a market with active nonzero lent impact."),
     },
 ]
 
@@ -174,7 +189,7 @@ def score_program(p):
     status = (p.get("status") or "").upper()
     if status == "CLOSED-NO-FINDING":
         score -= 6
-    elif status in ("PAUSED", "PAUSED-WATCH"):
+    elif status in ("PAUSED", "PAUSED-WATCH", "PAUSED-TOOLCHAIN"):
         score -= 4  # tracked, but not actionable while paused (no submission channel)
     elif status == "NEW":
         score += 4
