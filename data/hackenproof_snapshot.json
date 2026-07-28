@@ -1,0 +1,61 @@
+{
+  "generated_at": "2026-07-28T17:30:49.582973+00:00",
+  "programs": [
+    {
+      "name": "ShapeShift",
+      "url": "https://hackenproof.com/programs/shapeshift",
+      "reputation_required": 50,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 10000,
+      "status": "CLOSED-NO-FINDING",
+      "notes": "public source, paid history; rFOX StakingV1 == audited, invariants hold. low max bounty.",
+      "score": 6,
+      "priority": "MEDIUM",
+      "web_reachability": "skipped",
+      "new_since_last_week": false
+    },
+    {
+      "name": "Whitechain Bridge",
+      "url": "https://hackenproof.com/programs/whitechain-bridge",
+      "reputation_required": 50,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 100000,
+      "status": "CLOSED-NO-FINDING",
+      "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
+      "score": 4,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": false
+    },
+    {
+      "name": "RISC Zero Blockchain Verifiers",
+      "url": "https://hackenproof.com/programs/risc-zero-blockchain-verifiers",
+      "reputation_required": 50,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 150000,
+      "status": "PAUSED",
+      "notes": "high-value verifier scope, toolchain-heavy; contract surface clean/audit-saturated. paused-toolchain-gate.",
+      "score": 3,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": false
+    },
+    {
+      "name": "Cronos Smart Contracts",
+      "url": "https://hackenproof.com/programs/cronos-smart-contracts",
+      "reputation_required": 50,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 200000,
+      "status": "CLOSED-NO-FINDING",
+      "notes": "saturated ($0 paid, 146 subs); Fulcrom/Tectonic/Veno faithful forks or privileged. low EV unless scope changes.",
+      "score": 3,
+      "priority": "LOW",
+      "web_reachability": "skipped",
+      "new_since_last_week": false
+    }
+  ]
+}

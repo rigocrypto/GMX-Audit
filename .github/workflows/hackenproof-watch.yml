@@ -1,0 +1,64 @@
+name: Weekly HackenProof Watch
+
+on:
+  schedule:
+    - cron: "0 13 * * 1" # Every Monday 13:00 UTC
+  workflow_dispatch:
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Run watcher
+        run: python scripts/hackenproof_watch.py
+
+      - name: Commit updated snapshot
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/hackenproof_snapshot.json data/hackenproof_snapshot.csv data/hackenproof_alert.json reports/hackenproof_weekly_report.md
+          git diff --cached --quiet || git commit -m "chore: weekly hackenproof watch update"
+          git push
+
+      - name: Open issue for new high-priority targets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import json, os, subprocess, pathlib
+          alert = pathlib.Path("data/hackenproof_alert.json")
+          if not alert.exists():
+              raise SystemExit(0)
+          data = json.loads(alert.read_text())
+          alerts = data.get("alerts", [])
+          if not alerts:
+              print("No actionable alerts.")
+              raise SystemExit(0)
+          gen = data.get("generated_at", "")
+          title = f"HackenProof watch: {len(alerts)} new target(s) — {gen[:10]}"
+          lines = ["Automated weekly watcher flagged new HIGH/MEDIUM ≤80-rep smart-contract program(s):", ""]
+          for a in alerts:
+              lines.append(f"- **{a['name']}** ({a['priority']}, score {a['score']}) — rep {a['reputation_required']}, "
+                           f"critical ${a['critical_bounty_usd']:,}\n  {a['url']}\n  {a['notes']}")
+          lines += ["", "Clear the gate before starting Phase 1: fresh scope + accessible rep + custom deployed logic "
+                    "+ permissionless economic path + meaningful payout signal + practical local PoC.",
+                    "", "See reports/hackenproof_weekly_report.md."]
+          body = "\n".join(lines)
+          subprocess.run(["gh", "issue", "create", "--title", title, "--body", body,
+                          "--label", "hackenproof-watch"], check=False)
+          print(f"Opened issue for {len(alerts)} alert(s).")
+          PY
