@@ -145,6 +145,23 @@ PROGRAMS = [
                   "deployed increase-path changes, liquidation/ADL changes, GLV aggregation changes, "
                   "or a market with active nonzero lent impact."),
     },
+    {
+        "name": "Exactly - Immunefi",
+        "url": "https://immunefi.com/bug-bounty/exactly/information/",
+        "reputation_required": 0,
+        "access_confirmed": True,
+        "type": "smart-contracts",
+        "ecosystem": "EVM",
+        "critical_bounty_usd": 25000,
+        "status": "WATCH",
+        "notes": ("Phase 0 clean at commit on audit/exactly-phase0. Exa smart-account stack (exactly/exa): "
+                  "value paths reduce to trusted keeper/collector/issuer roles + consume-once timelocked "
+                  "ProposalManager queue; receiveFlashLoan lead refuted by flashLoaner+flashLoaning-hash guard "
+                  "in ExaPluginExtension; InstallmentsRouter is borrow-only (no repay/rollover accounting). "
+                  "Low $25k ceiling + 20+ audits. Revisit on redeployed ExaPlugin/ProposalManager/Extension "
+                  "diverging in proposal-binding/flashloan-guard/collector-issuer auth, or new Market/DebtManager "
+                  "impl changing fixed-pool/liquidation/bad-debt accounting."),
+    },
 ]
 
 SCORE_FIELDS = ["reputation_required", "critical_bounty_usd", "score", "priority", "notes", "status"]
