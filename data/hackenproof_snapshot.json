@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29T00:00:29.227838+00:00",
+  "generated_at": "2026-07-29T00:45:50.895786+00:00",
   "programs": [
     {
       "name": "Strata",
@@ -13,7 +13,7 @@
       "notes": "Phase 0 clean at commit 07fb443. June-2026 cooldown/CDO/RoundingGuard/UD60x18Ext scope additions postdate the March audits. Revisit on deployment change, new audit, known-issue update, or scope expansion. Immunefi (not HackenProof).",
       "score": 12,
       "priority": "HIGH",
-      "web_reachability": "http-200",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -28,7 +28,7 @@
       "notes": "Phase 0 clean at 6c4ccc8. Base Vault.vy/TokenizedStrategy.sol/BaseStrategy.sol excluded as Immunefi duplicates; yRoboTreasury custom paths reduce to trusted roles + accepted auction risks. Sherlock scope is DYNAMIC (yearn.fi/v3). Revisit when a custom strategy is added, yRoboTreasury changes, or a strategy introduces custom valuation/withdrawal/reporting logic.",
       "score": 12,
       "priority": "HIGH",
-      "web_reachability": "http-200",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -43,8 +43,23 @@
       "notes": "Pending/lent-impact Phase 0 clean at 2b08e88. Live v2.2 mechanism reconciled on Arbitrum: split/full decreases telescope, full close clears pending impact, lent impact is symmetric, GM valuation and withdrawal caps are consistent. Revisit on deployed increase-path changes, liquidation/ADL changes, GLV aggregation changes, or a market with active nonzero lent impact.",
       "score": 12,
       "priority": "HIGH",
-      "web_reachability": "http-200",
+      "web_reachability": "skipped",
       "new_since_last_week": false
+    },
+    {
+      "name": "Exactly - Immunefi",
+      "url": "https://immunefi.com/bug-bounty/exactly/information/",
+      "reputation_required": 0,
+      "access_confirmed": true,
+      "type": "smart-contracts",
+      "ecosystem": "EVM",
+      "critical_bounty_usd": 25000,
+      "status": "WATCH",
+      "notes": "Phase 0 clean at commit on audit/exactly-phase0. Exa smart-account stack (exactly/exa): value paths reduce to trusted keeper/collector/issuer roles + consume-once timelocked ProposalManager queue; receiveFlashLoan lead refuted by flashLoaner+flashLoaning-hash guard in ExaPluginExtension; InstallmentsRouter is borrow-only (no repay/rollover accounting). Low $25k ceiling + 20+ audits. Revisit on redeployed ExaPlugin/ProposalManager/Extension diverging in proposal-binding/flashloan-guard/collector-issuer auth, or new Market/DebtManager impl changing fixed-pool/liquidation/bad-debt accounting.",
+      "score": 8,
+      "priority": "MEDIUM",
+      "web_reachability": "skipped",
+      "new_since_last_week": true
     },
     {
       "name": "ShapeShift",
@@ -57,7 +72,7 @@
       "notes": "public source, paid history; rFOX StakingV1 == audited, invariants hold. low max bounty.",
       "score": 6,
       "priority": "MEDIUM",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -71,7 +86,7 @@
       "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
       "score": 4,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -86,7 +101,7 @@
       "notes": "PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/superearn-core-public; permissionless flows; direct fund-safety invariants. Foundry-fork reproducible. Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: DEPLOYMENT-DIFF FIRST. Rep UNCONFIRMED \u2014 confirm <=80. See targets/superearn/reports/reopen-checklist.md. Do NOT assess while paused.",
       "score": 4,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -100,7 +115,7 @@
       "notes": "high-value verifier scope, toolchain-heavy; contract surface clean/audit-saturated. paused-toolchain-gate.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -114,7 +129,7 @@
       "notes": "saturated ($0 paid, 146 subs); Fulcrom/Tectonic/Veno faithful forks or privileged. low EV unless scope changes.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     },
     {
@@ -129,7 +144,7 @@
       "notes": "PAUSED-TOOLCHAIN. paid $152.5k, 2102 submissions; Solidity Merkle v1.1.0 hardened and independently reconciled (22/22 + 3/3 differential). Residual Rust/ISMP/proxy surface BLOCKED by missing cargo/rustc and lacks a specific consumer-binding lead. Reopen only with a reproducible Rust toolchain + working Rust/Solidity fixtures + a concrete commitment/timeout/proxy/MPT hypothesis not already regression-covered.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "skipped",
       "new_since_last_week": false
     }
   ]
