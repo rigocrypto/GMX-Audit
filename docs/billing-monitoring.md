@@ -230,15 +230,115 @@ built-in fallback):
 | `BILLING_ALERT_EMAIL_TO` / `BILLING_ALERT_EMAIL_FROM` | Email recipients/sender (optional push) | — |
 | `GITHUB_TOKEN` / `GITHUB_REPOSITORY` | Incident-issue fallback (auto-set in Actions) | — |
 
-## Incident response flow
+## On-call incident runbook (provider-neutral)
 
-1. **Alert received** (external monitor and/or GitHub `billing-incident` issue).
-2. Check Railway service `billing-webhook`: deploy status, crash loop, health logs.
-   `railway logs --service billing-webhook --lines 200`.
-3. Confirm `GET /health` returns `200 {"ok":true}` once restored.
-4. The GitHub incident issue **closes itself** on the next healthy backup run.
-   If you fixed it out-of-band, you can close the issue manually — the next
-   outage opens a fresh one.
+Works with any HTTP monitor (Better Stack, UptimeRobot, Pingdom, Checkly, …).
+"The external monitor" below means whichever one is configured per §5 — no step
+depends on a specific vendor, so you can switch providers without rewriting these
+procedures.
+
+**Sensitive-data rule (applies to every step):** the `billing-incident` issue and
+any other public surface must contain sanitized operational facts only. **Never**
+paste response bodies, credentials/secrets, request or response headers, query
+parameters, or full/internal URLs into a public issue. Refer to the service by
+**host** only. Keep raw diagnostics in the private push channel or provider UI.
+
+### 1. Alert received
+
+- Confirm the **affected endpoint** (host only) and the **alert timestamp**.
+- Open the **external monitor's probe history**: when did failures start, how many
+  consecutive, and from which check locations.
+- Check the **Railway** service and **deployment** status (Active/Crashed, last
+  deploy result, restart events).
+- Check the latest **`Billing Health Alert`** workflow run (`gh run list
+  --workflow=billing-health-alert.yml -L 5`) — did the backup probe agree.
+- Confirm whether a **deduplicated GitHub `billing-incident` issue** was created
+  (and whether it is the current incident or a stale one).
+
+### 2. Initial triage
+
+- Test `/health` **directly**: `curl -sS -i https://<host>/health` — expect `200`
+  and body containing `"ok":true`.
+- Confirm **DNS resolution** and **TLS connectivity** to the host
+  (`nslookup <host>`; `curl -vI https://<host>/health` for the TLS handshake).
+- Classify the failure into one of:
+  - **process unavailable** (container down / crash-looping / not listening),
+  - **deployment failure** (bad/rolled-back deploy, failed build/migration),
+  - **HTTP 404/5xx** (process up but route missing or erroring — the class that
+    process/deploy alerts miss),
+  - **timeout / network failure** (no response within the probe timeout),
+  - **invalid health response** (`200` but body not `"ok":true`, or wrong content),
+  - **monitor-side false positive** (monitor region/DNS/agent issue while the
+    service is actually healthy from other vantage points).
+- Record the **classification** (not raw output) in the incident issue.
+
+### 3. Incident ownership
+
+- **Primary owner:** `[BILLING_ON_CALL_OWNER]` — acknowledges and drives triage.
+- **Secondary / escalation owner:** `[SECONDARY_ON_CALL_OWNER]`.
+- **Durable tracking:** the deduplicated GitHub `billing-incident` issue (one per
+  incident; the audit trail).
+- **Immediate notification:** the externally configured **push channel**
+  (`BILLING_ALERT_EMAIL_TO` and/or the `BILLING_ALERT_WEBHOOK_URL` secret / the
+  monitor's own channels).
+- The GitHub issue is **durable tracking, not a paging mechanism** — it must never
+  be the only thing expected to wake someone. If no push channel fired, treat that
+  as a second incident and fix it (see the §6 production-readiness gate).
+
+### 4. Escalation policy
+
+- **Initial alert:** after **two consecutive** failed probes (~10 min at a 5-min
+  interval).
+- **Acknowledge** within **10 minutes** of the initial alert.
+- **Escalate** to the secondary owner after **20–30 minutes** unresolved (the
+  backup workflow also auto-escalates the issue past
+  `BILLING_HEALTH_ESCALATE_AFTER_MIN`).
+- **Escalate immediately** — regardless of timers — if billing events are being
+  **lost, rejected, or processed incorrectly** (e.g. Stripe webhook deliveries
+  failing, dead-letter growth, duplicated/incorrect charges).
+- Record major **actions and timestamps** in the incident issue, **without**
+  exposing sensitive data.
+
+### 5. Recovery verification
+
+- Require **at least two successful** `/health` probes before declaring recovery.
+- Confirm the **external monitor** reports the incident resolved.
+- Confirm the **GitHub backup workflow** run succeeds against the live endpoint.
+- Verify the incident issue received its **recovery comment and closed**
+  automatically (close it manually if you fixed it out-of-band; the next outage
+  opens a fresh one).
+- Check **billing queues**, **webhook processing**, and **retry / dead-letter**
+  paths are healthy (see the worker `/health` payload and `billing:status`).
+- Confirm **no billing events were lost** during the outage window — reconcile
+  Stripe event deliveries against processed events; resend any missed events and
+  rely on idempotent handling.
+
+### 6. Post-incident review
+
+- Document the timeline: **outage start, detection, notification, acknowledgment,
+  mitigation, and recovery** times.
+- Identify **why the primary monitor detected or failed to detect** the incident
+  (e.g. a running-but-404 endpoint that process/deploy alerts cannot see).
+- Record **customer / transaction impact** (events delayed, lost, or reprocessed).
+- Open **follow-up issues** for corrective actions instead of expanding the closed
+  incident issue indefinitely; link them from the incident.
+
+### 7. Controlled readiness test (safe — never disrupt production)
+
+Validate the full pipeline against a **safe target**, not the live billing service.
+
+- [ ] Point the **external monitor** (or a throwaway monitor) at a **test endpoint
+      or maintenance response** that you can turn on/off — or point the backup
+      workflow's `BILLING_HEALTHCHECK_URL` at an unreachable/staging URL via manual
+      `workflow_dispatch`. **Do not** intentionally disrupt production billing.
+- [ ] Verify **initial alert delivery** to the push channel (recipient confirms
+      receipt).
+- [ ] Verify **escalation** fires after the configured window.
+- [ ] Verify **deduplication**: repeated failures produce **one** incident, not one
+      per probe/run.
+- [ ] Verify **recovery notification** and that the incident issue auto-closes.
+- [ ] Record the **test date**, **recipient confirmation**, and **result** (and
+      file the production-readiness sign-off).
 
 ## Verifying the pipeline
 
