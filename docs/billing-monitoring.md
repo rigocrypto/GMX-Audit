@@ -47,17 +47,23 @@ stricter threshold + escalation policy is required (see §5).
 | Recovery notification | Enabled |
 | GitHub Actions backup | every 30 minutes (§2) |
 
-### Primary notification recipients
+### Notification ownership (role-based — no personal data in the repo)
 
-Document the real recipients here (kept in the repo so on-call is unambiguous):
+Track ownership by **role**, never by personal email, personal contact details,
+Slack webhook URLs, or private channel identifiers. Real destinations live in
+environment variables / secrets, not in this file:
 
-- **Primary (page immediately):** `<ops-oncall@your-domain>` / Slack `#billing-alerts`
-- **Secondary (escalation):** `<engineering-lead@your-domain>`
-- **Recovery notices:** same channel as primary
+- **Primary incident owner:** `[BILLING_ON_CALL_OWNER]`
+- **Primary email recipient:** configured through `BILLING_ALERT_EMAIL_TO`
+- **Slack/Discord destination:** configured through the existing
+  `BILLING_ALERT_WEBHOOK_URL` webhook secret
+- **Escalation owner:** `[SECONDARY_ON_CALL_OWNER]`
+- **Recovery notices:** same channel as the primary push channel
 
-> Replace the placeholders above with the real addresses/channel before relying
-> on this. Prefer a Slack/Discord webhook or platform-native channel over
-> SMTP-only — SMTP credentials expire, get misconfigured, and fail silently.
+> Resolve the `[…_OWNER]` roles to real people in your on-call tool (PagerDuty,
+> Better Stack on-call, Opsgenie) — not here. Prefer a Slack/Discord webhook or
+> platform-native channel over SMTP-only: SMTP credentials expire, get
+> misconfigured, and fail silently.
 
 ### Railway-native setup steps (manual)
 
@@ -136,7 +142,7 @@ workflow's built-in `GITHUB_TOKEN` and `issues: write` permission.
 On every run, `reportChannelConfig()` lists the wired-up channels and emits a
 loud `::warning::` when **none** is configured:
 
-```
+```text
 ::warning::[billing:health-alert] NO notification channel is configured. ...
 ```
 
@@ -185,6 +191,11 @@ Railway and GitHub. Any equivalent monitor (Pingdom, Checkly) works too.
 
 Run after wiring up monitors. Do **not** automate against production.
 
+- [ ] **Required before production:** at least one *immediate push* notification
+      channel (Slack/Discord webhook **or** email) is configured **and tested**,
+      in addition to the GitHub issue fallback. The deduplicated issue is durable
+      incident tracking — it is **not** a pager and must not be the only thing
+      expected to wake someone during a billing outage.
 - [ ] `curl -s https://billing-webhook-production.up.railway.app/health` →
       `200` and body `{"ok":true}`.
 - [ ] Railway healthcheck path is `/health`; restart policy is `On Failure`.
