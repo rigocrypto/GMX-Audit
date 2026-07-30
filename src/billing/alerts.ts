@@ -13,6 +13,8 @@ export type BillingAlert = {
 
 export type BillingAlertNotifier = (alert: BillingAlert) => Promise<void>;
 
+export type AlertChannel = "webhook" | "email";
+
 function toList(value: string | undefined): string[] {
   if (!value) return [];
   return value
@@ -41,6 +43,30 @@ async function postWebhook(webhookUrl: string, text: string): Promise<void> {
     const body = await response.text();
     throw new Error(`webhook_post_failed status=${response.status} body=${body.slice(0, 300)}`);
   }
+}
+
+/**
+ * Report which push-notification channels are wired up from the current env.
+ * Shared by the notifier and by startup config checks so both agree on what
+ * "configured" means. The GitHub-issue fallback is tracked separately (it
+ * depends on GITHUB_TOKEN/GITHUB_REPOSITORY, not on these vars).
+ */
+export function listConfiguredAlertChannels(): AlertChannel[] {
+  const channels: AlertChannel[] = [];
+
+  if (process.env.BILLING_ALERT_WEBHOOK_URL?.trim()) {
+    channels.push("webhook");
+  }
+
+  const emailTo = toList(process.env.BILLING_ALERT_EMAIL_TO);
+  const emailFrom = process.env.BILLING_ALERT_EMAIL_FROM?.trim();
+  const smtpHost = process.env.SMTP_HOST?.trim();
+  const smtpPort = Number.parseInt(process.env.SMTP_PORT || "587", 10);
+  if (emailFrom && smtpHost && Number.isFinite(smtpPort) && emailTo.length > 0) {
+    channels.push("email");
+  }
+
+  return channels;
 }
 
 export function createBillingAlertNotifierFromEnv(): BillingAlertNotifier {

@@ -202,6 +202,11 @@ Single-instance constraint:
 
 ## Billing Worker Health Monitoring
 
+> **Production uptime monitoring & recovery** (external monitor + deduplicated
+> GitHub incident issue + auto-close on recovery) is documented in
+> [billing-monitoring.md](billing-monitoring.md). The section below covers the
+> local worker `/health` payload and manual alert thresholds.
+
 Endpoint:
 
 - `GET http://localhost:3000/health`

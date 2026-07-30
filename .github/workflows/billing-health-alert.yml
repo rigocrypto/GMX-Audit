@@ -1,12 +1,25 @@
 name: Billing Health Alert
 
+# SECONDARY / BACKUP outage detector only.
+# The PRIMARY detector is an external uptime monitor hitting /health every ~5 min
+# with a 2-consecutive-failure threshold and recovery notifications
+# (see docs/billing-monitoring.md). GitHub Actions scheduled runs are best-effort
+# and are NOT guaranteed to fire on time, so this job runs on a relaxed cadence and
+# confirms failures in-run before alerting.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/30 * * * *" # every 30 minutes (backup cadence; GH schedules are best-effort)
   workflow_dispatch:
 
 permissions:
   contents: read
+  issues: write # open/close the deduplicated incident issue (notification fallback)
+
+# One incident is tracked at a time; serialize runs so concurrent checks cannot
+# race on creating/closing the incident issue.
+concurrency:
+  group: billing-health-alert
+  cancel-in-progress: false
 
 jobs:
   health-alert:
@@ -23,8 +36,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Ensure incident labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create billing-incident \
+            --description "Automated billing webhook outage incident" \
+            --color B60205 2>/dev/null || true
+          gh label create "status:escalated" \
+            --description "Incident escalated after exceeding the outage window" \
+            --color D93F0B 2>/dev/null || true
+
       - name: Run health alert
         env:
+          # Push channels (optional — the deduplicated GitHub issue is the always-on fallback)
+          BILLING_ALERT_WEBHOOK_URL: ${{ secrets.BILLING_ALERT_WEBHOOK_URL }}
           BILLING_ALERT_EMAIL_TO: ${{ secrets.BILLING_ALERT_EMAIL_TO }}
           BILLING_ALERT_EMAIL_FROM: ${{ secrets.BILLING_ALERT_EMAIL_FROM }}
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
@@ -32,6 +58,15 @@ jobs:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           BILLING_HEALTHCHECK_URL: ${{ secrets.BILLING_HEALTHCHECK_URL }}
-          # GitHub-hosted runners are ephemeral, so persisted consecutive-failure state does not carry across runs.
-          BILLING_HEALTH_ALERT_CONSECUTIVE_FAILURES: "1"
+          # In-run confirmation: require 2 consecutive failed probes (~15s apart)
+          # before declaring an outage. Ephemeral runners keep no cross-run state,
+          # so consecutive-failure confirmation happens within a single run.
+          BILLING_HEALTH_ALERT_PROBES: "2"
+          BILLING_HEALTH_ALERT_PROBE_GAP_MS: "15000"
+          BILLING_HEALTH_ESCALATE_AFTER_MIN: "20"
+          # GitHub incident-issue fallback (dedupe + auto-recover close)
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
         run: npm run billing:health-alert
