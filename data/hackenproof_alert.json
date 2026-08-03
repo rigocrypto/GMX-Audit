@@ -1,20 +1,4 @@
 {
-  "generated_at": "2026-07-29T00:45:50.895786+00:00",
-  "alerts": [
-    {
-      "name": "Exactly - Immunefi",
-      "url": "https://immunefi.com/bug-bounty/exactly/information/",
-      "reputation_required": 0,
-      "access_confirmed": true,
-      "type": "smart-contracts",
-      "ecosystem": "EVM",
-      "critical_bounty_usd": 25000,
-      "status": "WATCH",
-      "notes": "Phase 0 clean at commit on audit/exactly-phase0. Exa smart-account stack (exactly/exa): value paths reduce to trusted keeper/collector/issuer roles + consume-once timelocked ProposalManager queue; receiveFlashLoan lead refuted by flashLoaner+flashLoaning-hash guard in ExaPluginExtension; InstallmentsRouter is borrow-only (no repay/rollover accounting). Low $25k ceiling + 20+ audits. Revisit on redeployed ExaPlugin/ProposalManager/Extension diverging in proposal-binding/flashloan-guard/collector-issuer auth, or new Market/DebtManager impl changing fixed-pool/liquidation/bad-debt accounting.",
-      "score": 8,
-      "priority": "MEDIUM",
-      "web_reachability": "skipped",
-      "new_since_last_week": true
-    }
-  ]
+  "generated_at": "2026-08-03T13:55:33.798987+00:00",
+  "alerts": []
 }
