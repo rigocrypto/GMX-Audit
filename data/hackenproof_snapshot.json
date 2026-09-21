@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-17T13:44:11.809665+00:00",
+  "generated_at": "2026-09-21T18:34:53.603555+00:00",
   "programs": [
     {
       "name": "Strata",
@@ -72,7 +72,7 @@
       "notes": "public source, paid history; rFOX StakingV1 == audited, invariants hold. low max bounty.",
       "score": 6,
       "priority": "MEDIUM",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     },
     {
@@ -86,7 +86,7 @@
       "notes": "centralized bridge; signature domain gap refuted by distinct relayers.",
       "score": 4,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     },
     {
@@ -101,7 +101,7 @@
       "notes": "PAUSED-WATCH, HIGH on reopening. Custom cross-chain vault/accounting (Kaia CooldownVault/OriginVault/BridgeAccountant <-> Ethereum RemoteVault); public source superearn-io/superearn-core-public; permissionless flows; direct fund-safety invariants. Foundry-fork reproducible. Saturation HIGH (249 subs, $2.8k paid, 3 Certik reviews). Strategy: DEPLOYMENT-DIFF FIRST. Rep UNCONFIRMED \u2014 confirm <=80. See targets/superearn/reports/reopen-checklist.md. Do NOT assess while paused.",
       "score": 4,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     },
     {
@@ -115,7 +115,7 @@
       "notes": "high-value verifier scope, toolchain-heavy; contract surface clean/audit-saturated. paused-toolchain-gate.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     },
     {
@@ -129,7 +129,7 @@
       "notes": "saturated ($0 paid, 146 subs); Fulcrom/Tectonic/Veno faithful forks or privileged. low EV unless scope changes.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     },
     {
@@ -144,7 +144,7 @@
       "notes": "PAUSED-TOOLCHAIN. paid $152.5k, 2102 submissions; Solidity Merkle v1.1.0 hardened and independently reconciled (22/22 + 3/3 differential). Residual Rust/ISMP/proxy surface BLOCKED by missing cargo/rustc and lacks a specific consumer-binding lead. Reopen only with a reproducible Rust toolchain + working Rust/Solidity fixtures + a concrete commitment/timeout/proxy/MPT hypothesis not already regression-covered.",
       "score": 3,
       "priority": "LOW",
-      "web_reachability": "http-403",
+      "web_reachability": "http-200",
       "new_since_last_week": false
     }
   ]
