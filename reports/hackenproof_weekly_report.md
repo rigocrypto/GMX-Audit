@@ -1,6 +1,6 @@
 # Weekly HackenProof Watch
 
-Generated: 2026-10-19T13:21:05.325728+00:00
+Generated: 2026-10-26T14:45:50.462236+00:00
 
 ## Shortlist (scored)
 
