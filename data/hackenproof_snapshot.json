@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-16T13:27:36.819583+00:00",
+  "generated_at": "2026-11-24T00:40:54.929682+00:00",
   "programs": [
     {
       "name": "Strata",
@@ -58,7 +58,7 @@
       "notes": "Phase 0 clean at commit on audit/exactly-phase0. Exa smart-account stack (exactly/exa): value paths reduce to trusted keeper/collector/issuer roles + consume-once timelocked ProposalManager queue; receiveFlashLoan lead refuted by flashLoaner+flashLoaning-hash guard in ExaPluginExtension; InstallmentsRouter is borrow-only (no repay/rollover accounting). Low $25k ceiling + 20+ audits. Revisit on redeployed ExaPlugin/ProposalManager/Extension diverging in proposal-binding/flashloan-guard/collector-issuer auth, or new Market/DebtManager impl changing fixed-pool/liquidation/bad-debt accounting.",
       "score": 8,
       "priority": "MEDIUM",
-      "web_reachability": "http-200",
+      "web_reachability": "http-404",
       "new_since_last_week": false
     },
     {
